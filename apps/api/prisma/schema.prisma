@@ -1,0 +1,1364 @@
+// Vicinity Zambia database schema.
+// PostGIS geography columns, tsvector search columns, triggers and GiST/GIN indexes are
+// declared here as Unsupported(...) where Prisma needs to know about them, and created in
+// hand-reviewed SQL inside the migrations (see DATABASE.md). Spatial and full-text queries use
+// parameterised raw SQL in src/search and src/providers.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum EmailTokenType {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+  WEB
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum MediaPurpose {
+  AVATAR
+  PROVIDER_LOGO
+  PROVIDER_COVER
+  PROVIDER_GALLERY
+  LISTING
+  PORTFOLIO
+  REVIEW
+  CREDENTIAL
+  ORGANIZATION_LOGO
+  ORGANIZATION_COVER
+}
+
+enum MediaStatus {
+  PENDING
+  READY
+  DELETED
+}
+
+enum ProviderType {
+  INDIVIDUAL
+  BUSINESS
+}
+
+enum ProviderStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  SUSPENDED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ServiceMode {
+  AT_LOCATION
+  MOBILE
+  BOTH
+}
+
+enum ListingType {
+  SERVICE
+  PRODUCT
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+  REMOVED
+}
+
+enum PriceType {
+  FIXED
+  STARTING_FROM
+  RANGE
+  HOURLY
+  PER_UNIT
+  NEGOTIABLE
+  QUOTE
+}
+
+enum Visibility {
+  PUBLIC
+  ORGANIZATION
+  GROUP
+}
+
+enum StockStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+  MADE_TO_ORDER
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  PENDING
+  HIDDEN
+}
+
+enum OrganizationType {
+  CHURCH
+  COMPANY
+  SCHOOL
+  CLUB
+  ASSOCIATION
+  NEIGHBOURHOOD
+  COMMUNITY
+  OTHER
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum EnquiryStatus {
+  NEW
+  READ
+  ARCHIVED
+}
+
+enum ContactChannel {
+  PHONE
+  WHATSAPP
+  EMAIL
+  ENQUIRY
+}
+
+enum AnalyticsEventType {
+  PROFILE_VIEW
+  LISTING_VIEW
+  CONTACT_PHONE
+  CONTACT_WHATSAPP
+  CONTACT_EMAIL
+  ENQUIRY
+  FAVORITE
+  REVIEW
+}
+
+enum NotificationCategory {
+  ACCOUNT
+  BOOKING
+  MESSAGE
+  ENQUIRY
+  REVIEW
+  SAVED_PROVIDER
+  ORGANIZATION
+  DISCOVERY
+  PROMOTION
+  SYSTEM
+}
+
+enum BookingStatus {
+  REQUESTED
+  RESCHEDULE_PROPOSED
+  CONFIRMED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+enum BookingLocation {
+  AT_PROVIDER
+  AT_CUSTOMER
+}
+
+enum MessageKind {
+  TEXT
+  IMAGE
+  SYSTEM
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  SKIPPED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PromotionStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+  EXPIRED
+}
+
+enum ReportTargetType {
+  REVIEW
+  PROVIDER
+  LISTING
+  ORGANIZATION
+  USER
+}
+
+enum ReportReason {
+  SPAM
+  FAKE
+  OFFENSIVE
+  FRAUD
+  INAPPROPRIATE
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+// ───────────────────────────── Identity ─────────────────────────────
+
+/// A person with an account. Profile fields live on the user row (one-to-one, always read together).
+model User {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Null for accounts created with phone sign-in (until the user adds an email).
+  email           String?    @unique
+  /// Null for phone-only accounts.
+  passwordHash    String?
+  emailVerifiedAt DateTime?
+  fullName        String
+  /// E.164. Unique once verified by SMS code (partial unique index), which also enables phone sign-in.
+  phone           String?
+  phoneVerifiedAt DateTime?
+  bio             String?
+  locationName    String?
+  avatarMediaId   String?    @db.Uuid
+  status          UserStatus @default(ACTIVE)
+  suspendedReason String?
+  lastLoginAt     DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @default(now()) @updatedAt
+
+  avatar                  Media?                   @relation("UserAvatar", fields: [avatarMediaId], references: [id], onDelete: SetNull)
+  refreshTokens           RefreshToken[]
+  emailTokens             EmailToken[]
+  otpChallenges           OtpChallenge[]
+  deviceTokens            DeviceToken[]
+  provider                Provider?
+  adminRoles              UserAdminRole[]
+  ownedMedia              Media[]                  @relation("MediaOwner")
+  reviews                 Review[]
+  favoriteProviders       FavoriteProvider[]
+  favoriteListings        FavoriteListing[]
+  enquiries               Enquiry[]
+  orgMemberships          OrganizationMembership[]
+  groupMemberships        GroupMembership[]
+  ownedOrganizations      Organization[]           @relation("OrgOwner")
+  createdGroups           Group[]                  @relation("GroupCreator")
+  sentInvitations         OrganizationInvitation[] @relation("Inviter")
+  notifications           Notification[]
+  notificationPreference  NotificationPreference?
+  reports                 ModerationReport[]       @relation("Reporter")
+  resolvedReports         ModerationReport[]       @relation("Resolver")
+  auditLogs               AuditLog[]
+  searchEvents            SearchEvent[]
+  contactEvents           ContactEvent[]
+  bookingsAsCustomer      Booking[]                @relation("BookingCustomer")
+  conversationsAsCustomer Conversation[]           @relation("ConversationCustomer")
+  sentMessages            Message[]                @relation("MessageSender")
+  payments                Payment[]                @relation("PaymentPayer")
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Rotating refresh tokens. Only a SHA-256 hash is stored. Reusing a rotated token revokes its whole family.
+model RefreshToken {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String    @db.Uuid
+  tokenHash    String    @unique
+  familyId     String    @db.Uuid
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?   @db.Uuid
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+model EmailToken {
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String         @db.Uuid
+  type      EmailTokenType
+  tokenHash String         @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model DeviceToken {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String         @db.Uuid
+  token        String         @unique
+  platform     DevicePlatform
+  lastSeenAt   DateTime       @default(now())
+  disabledAt   DateTime?
+  failureCount Int            @default(0)
+  createdAt    DateTime       @default(now())
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([userId])
+}
+
+// ───────────────────────────── Administration ─────────────────────────────
+
+model AdminRole {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  permissions AdminRolePermission[]
+  users       UserAdminRole[]
+}
+
+model AdminPermission {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String  @unique
+  description String?
+
+  roles AdminRolePermission[]
+}
+
+model AdminRolePermission {
+  roleId       String @db.Uuid
+  permissionId String @db.Uuid
+
+  role       AdminRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission AdminPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserAdminRole {
+  userId    String   @db.Uuid
+  roleId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role AdminRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model ModerationReport {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporterId     String?          @db.Uuid
+  targetType     ReportTargetType
+  targetId       String           @db.Uuid
+  reason         ReportReason
+  details        String?
+  status         ReportStatus     @default(OPEN)
+  /// Internal only: never returned by public endpoints.
+  resolutionNote String?
+  resolvedById   String?          @db.Uuid
+  resolvedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+
+  reporter   User? @relation("Reporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  resolvedBy User? @relation("Resolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json     @default("{}")
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// ───────────────────────────── Media ─────────────────────────────
+
+/// Any uploaded file. Bytes live in object storage (Cloudflare R2, or local disk in development).
+model Media {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId    String       @db.Uuid
+  kind       MediaKind
+  purpose    MediaPurpose
+  storageKey String       @unique
+  mimeType   String
+  sizeBytes  Int
+  width      Int?
+  height     Int?
+  isPrivate  Boolean      @default(false)
+  status     MediaStatus  @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now()) @updatedAt
+
+  owner              User                 @relation("MediaOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  userAvatars        User[]               @relation("UserAvatar")
+  providerLogos      Provider[]           @relation("ProviderLogo")
+  providerCovers     Provider[]           @relation("ProviderCover")
+  providerMedia      ProviderMedia[]
+  listingMedia       ListingMedia[]
+  portfolioMedia     PortfolioMedia[]
+  reviewMedia        ReviewMedia[]
+  credentials        ProviderCredential[]
+  organizationLogos  Organization[]       @relation("OrgLogo")
+  organizationCovers Organization[]       @relation("OrgCover")
+  messages           Message[]
+
+  @@index([ownerId, purpose])
+  @@index([status, createdAt])
+}
+
+// ───────────────────────────── Categories ─────────────────────────────
+
+model Category {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parentId    String?   @db.Uuid
+  slug        String    @unique
+  name        String
+  description String?
+  icon        String?
+  color       String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  parent           Category?       @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children         Category[]      @relation("CategoryTree")
+  aliases          CategoryAlias[]
+  listings         Listing[]
+  primaryProviders Provider[]
+
+  @@index([parentId, sortOrder])
+}
+
+/// Synonyms used by search, e.g. "nail tech", "manicure" -> Nail Care.
+model CategoryAlias {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId String @db.Uuid
+  alias      String
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, alias])
+  @@index([alias])
+}
+
+// ───────────────────────────── Providers ─────────────────────────────
+
+/// The public storefront of an individual or business. One per user account.
+model Provider {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String             @unique @db.Uuid
+  slug               String             @unique
+  type               ProviderType
+  displayName        String
+  tagline            String?
+  bio                String?
+  phone              String
+  whatsapp           String?
+  email              String?
+  website            String?
+  socialLinks        Json               @default("{}")
+  serviceMode        ServiceMode        @default(AT_LOCATION)
+  serviceRadiusKm    Decimal?           @db.Decimal(6, 2)
+  languages          String[]           @default([])
+  logoMediaId        String?            @db.Uuid
+  coverMediaId       String?            @db.Uuid
+  primaryCategoryId  String?            @db.Uuid
+  status             ProviderStatus     @default(DRAFT)
+  onboardingStep     Int                @default(0)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  /// Internal moderation note. Never exposed publicly.
+  verificationNote   String?
+  verifiedAt         DateTime?
+  ratingAverage      Decimal            @default(0) @db.Decimal(3, 2)
+  ratingCount        Int                @default(0)
+  completedProjects  Int                @default(0)
+  publishedAt        DateTime?
+  deletedAt          DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @default(now()) @updatedAt
+
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logo            Media?                   @relation("ProviderLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  cover           Media?                   @relation("ProviderCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  primaryCategory Category?                @relation(fields: [primaryCategoryId], references: [id], onDelete: SetNull)
+  locations       ProviderLocation[]
+  serviceAreas    ServiceArea[]
+  availability    ProviderAvailability[]
+  media           ProviderMedia[]
+  credentials     ProviderCredential[]
+  listings        Listing[]
+  portfolio       PortfolioProject[]
+  reviews         Review[]
+  reviewResponses ReviewResponse[]
+  enquiries       Enquiry[]
+  favorites       FavoriteProvider[]
+  contactEvents   ContactEvent[]
+  analyticsEvents AnalyticsEvent[]
+  analyticsDaily  ProviderAnalyticsDaily[]
+  subscriptions   ProviderSubscription[]
+  entitlements    Entitlement[]
+  promotions      ListingPromotion[]
+  payments        Payment[]
+  bookings        Booking[]
+  conversations   Conversation[]
+
+  @@index([status, verificationStatus])
+  @@index([ratingAverage])
+}
+
+/// A physical place the provider works from. `location` is private; `publicLocation` is what other users see.
+model ProviderLocation {
+  id                String                                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId        String                                @db.Uuid
+  label             String
+  addressLine       String?
+  area              String
+  city              String
+  location          Unsupported("geography(Point, 4326)")
+  publicLocation    Unsupported("geography(Point, 4326)")
+  showExactLocation Boolean                               @default(false)
+  isPrimary         Boolean                               @default(false)
+  createdAt         DateTime                              @default(now())
+  updatedAt         DateTime                              @default(now()) @updatedAt
+
+  provider Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  listings Listing[]
+
+  @@index([providerId])
+}
+
+/// A circle the provider travels to (mobile services, delivery).
+model ServiceArea {
+  id         String                                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId String                                @db.Uuid
+  name       String
+  center     Unsupported("geography(Point, 4326)")
+  radiusKm   Decimal                               @db.Decimal(6, 2)
+  createdAt  DateTime                              @default(now())
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+}
+
+/// Weekly working hours. dayOfWeek 0 = Sunday. Times are Africa/Lusaka local "HH:MM".
+model ProviderAvailability {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId String @db.Uuid
+  dayOfWeek  Int    @db.SmallInt
+  startTime  String
+  endTime    String
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId, dayOfWeek])
+}
+
+model ProviderMedia {
+  providerId String  @db.Uuid
+  mediaId    String  @db.Uuid
+  caption    String?
+  sortOrder  Int     @default(0)
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  media    Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([providerId, mediaId])
+}
+
+/// Qualifications. The title can be public; the document (mediaId) is always private.
+model ProviderCredential {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId String    @db.Uuid
+  title      String
+  issuer     String?
+  issuedAt   DateTime?
+  mediaId    String?   @db.Uuid
+  isPublic   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  media    Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([providerId])
+}
+
+// ───────────────────────────── Listings ─────────────────────────────
+
+/// One product or service offered by a provider.
+model Listing {
+  id             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId     String                   @db.Uuid
+  type           ListingType
+  title          String
+  description    String?
+  categoryId     String                   @db.Uuid
+  priceType      PriceType
+  price          Decimal?                 @db.Decimal(12, 2)
+  priceMax       Decimal?                 @db.Decimal(12, 2)
+  currency       String                   @default("ZMW") @db.Char(3)
+  unit           String?
+  keywords       String[]                 @default([])
+  status         ListingStatus            @default(DRAFT)
+  visibility     Visibility               @default(PUBLIC)
+  organizationId String?                  @db.Uuid
+  groupId        String?                  @db.Uuid
+  locationId     String?                  @db.Uuid
+  isAvailable    Boolean                  @default(true)
+  /// 0-100, recomputed on save: photos, description, price, keywords.
+  qualityScore   Int                      @default(0) @db.SmallInt
+  /// Maintained by a trigger from title, description, keywords, category names and aliases, provider name.
+  searchVector   Unsupported("tsvector")?
+  publishedAt    DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @default(now()) @updatedAt
+
+  provider       Provider           @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  category       Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  organization   Organization?      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  group          Group?             @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  location       ProviderLocation?  @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  serviceDetails ServiceDetails?
+  productDetails ProductDetails?
+  media          ListingMedia[]
+  favorites      FavoriteListing[]
+  reviews        Review[]
+  enquiries      Enquiry[]
+  contactEvents  ContactEvent[]
+  promotions     ListingPromotion[]
+  bookings       Booking[]
+
+  @@index([providerId, status])
+  @@index([categoryId, status])
+  @@index([organizationId])
+  @@index([groupId])
+  @@index([status, visibility, publishedAt])
+}
+
+model ServiceDetails {
+  listingId       String @id @db.Uuid
+  durationMinutes Int?
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model ProductDetails {
+  listingId         String      @id @db.Uuid
+  stockStatus       StockStatus @default(IN_STOCK)
+  pickupAvailable   Boolean     @default(true)
+  deliveryAvailable Boolean     @default(false)
+  deliveryRadiusKm  Decimal?    @db.Decimal(6, 2)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model ListingMedia {
+  listingId String @db.Uuid
+  mediaId   String @db.Uuid
+  sortOrder Int    @default(0)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  media   Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, mediaId])
+  @@index([listingId, sortOrder])
+}
+
+// ───────────────────────────── Portfolio ─────────────────────────────
+
+model PortfolioProject {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId   String    @db.Uuid
+  title        String
+  description  String?
+  locationName String?
+  durationText String?
+  price        Decimal?  @db.Decimal(12, 2)
+  currency     String    @default("ZMW") @db.Char(3)
+  showPrice    Boolean   @default(false)
+  completedAt  DateTime?
+  sortOrder    Int       @default(0)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+
+  provider Provider         @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  media    PortfolioMedia[]
+
+  @@index([providerId, sortOrder])
+}
+
+model PortfolioMedia {
+  projectId String @db.Uuid
+  mediaId   String @db.Uuid
+  sortOrder Int    @default(0)
+
+  project PortfolioProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  media   Media            @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, mediaId])
+}
+
+// ───────────────────────────── Reviews ─────────────────────────────
+
+/// One review per customer per provider (editable). Verification is set by the server only.
+model Review {
+  id                    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId            String       @db.Uuid
+  authorId              String       @db.Uuid
+  listingId             String?      @db.Uuid
+  rating                Int          @db.SmallInt
+  comment               String?
+  status                ReviewStatus @default(PUBLISHED)
+  isVerifiedInteraction Boolean      @default(false)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @default(now()) @updatedAt
+
+  provider Provider        @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  listing  Listing?        @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  response ReviewResponse?
+  media    ReviewMedia[]
+
+  @@unique([authorId, providerId])
+  @@index([providerId, status, createdAt])
+}
+
+model ReviewResponse {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reviewId   String   @unique @db.Uuid
+  providerId String   @db.Uuid
+  body       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  review   Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+}
+
+model ReviewMedia {
+  reviewId String @db.Uuid
+  mediaId  String @db.Uuid
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  media  Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([reviewId, mediaId])
+}
+
+// ───────────────────────────── Organizations & groups ─────────────────────────────
+
+model Organization {
+  id           String                                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug         String                                 @unique
+  name         String
+  type         OrganizationType
+  description  String?
+  isPrivate    Boolean                                @default(false)
+  logoMediaId  String?                                @db.Uuid
+  coverMediaId String?                                @db.Uuid
+  locationName String?
+  location     Unsupported("geography(Point, 4326)")?
+  ownerId      String                                 @db.Uuid
+  status       OrganizationStatus                     @default(ACTIVE)
+  deletedAt    DateTime?
+  createdAt    DateTime                               @default(now())
+  updatedAt    DateTime                               @default(now()) @updatedAt
+
+  owner       User                     @relation("OrgOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  logo        Media?                   @relation("OrgLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  cover       Media?                   @relation("OrgCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  memberships OrganizationMembership[]
+  groups      Group[]
+  invitations OrganizationInvitation[]
+  listings    Listing[]
+
+  @@index([status, isPrivate])
+}
+
+model OrganizationMembership {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  userId         String   @db.Uuid
+  role           OrgRole  @default(MEMBER)
+  joinedAt       DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+/// A group inside an organization, or standalone when organizationId is null.
+model Group {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String?   @db.Uuid
+  name           String
+  description    String?
+  isPrivate      Boolean   @default(false)
+  createdById    String    @db.Uuid
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+
+  organization Organization?            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User                     @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  memberships  GroupMembership[]
+  invitations  OrganizationInvitation[]
+  listings     Listing[]
+
+  @@index([organizationId])
+}
+
+model GroupMembership {
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId  String    @db.Uuid
+  userId   String    @db.Uuid
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+/// Invite by shareable code (optionally bound to an email). Accepting joins the org, and the group if set.
+model OrganizationInvitation {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String           @db.Uuid
+  groupId        String?          @db.Uuid
+  code           String           @unique
+  email          String?
+  role           OrgRole          @default(MEMBER)
+  invitedById    String           @db.Uuid
+  maxUses        Int              @default(1)
+  useCount       Int              @default(0)
+  status         InvitationStatus @default(PENDING)
+  expiresAt      DateTime
+  createdAt      DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  group        Group?       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("Inviter", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([email])
+}
+
+// ───────────────────────────── Engagement ─────────────────────────────
+
+model FavoriteProvider {
+  userId     String   @db.Uuid
+  providerId String   @db.Uuid
+  notify     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@id([userId, providerId])
+  @@index([providerId])
+}
+
+model FavoriteListing {
+  userId    String   @db.Uuid
+  listingId String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@index([listingId])
+}
+
+/// An in-app enquiry from a customer to a provider.
+model Enquiry {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId   String        @db.Uuid
+  listingId    String?       @db.Uuid
+  customerId   String        @db.Uuid
+  message      String
+  contactPhone String?
+  status       EnquiryStatus @default(NEW)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @default(now()) @updatedAt
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  listing  Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  customer User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId, status, createdAt])
+  @@index([customerId])
+}
+
+/// A tap on call / WhatsApp / email. Records intent only, never the conversation.
+model ContactEvent {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId String         @db.Uuid
+  listingId  String?        @db.Uuid
+  userId     String?        @db.Uuid
+  channel    ContactChannel
+  createdAt  DateTime       @default(now())
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  listing  Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([providerId, createdAt])
+  @@index([userId, providerId])
+}
+
+/// Searches, kept for relevance tuning and personal "recent searches". Coordinates are rounded to ~1 km.
+model SearchEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String?  @db.Uuid
+  query       String?
+  categoryId  String?  @db.Uuid
+  latRounded  Decimal? @db.Decimal(6, 2)
+  lngRounded  Decimal? @db.Decimal(6, 2)
+  radiusKm    Decimal? @db.Decimal(6, 2)
+  resultCount Int
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// ───────────────────────────── Bookings & messaging ─────────────────────────────
+
+/// A customer's request for a service at a time. The provider confirms or declines; either side may
+/// propose a new time (RESCHEDULE_PROPOSED) or cancel. No payment is taken in-app.
+model Booking {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId          String          @db.Uuid
+  providerId          String          @db.Uuid
+  listingId           String?         @db.Uuid
+  conversationId      String?         @db.Uuid
+  scheduledAt         DateTime
+  durationMinutes     Int             @default(60)
+  location            BookingLocation @default(AT_PROVIDER)
+  /// Where the provider should go when location = AT_CUSTOMER. Shared only with this provider.
+  address             String?
+  note                String?
+  /// Price shown to the customer when requesting (snapshot of the listing's price), informational only.
+  quotedPrice         Decimal?        @db.Decimal(12, 2)
+  currency            String          @default("ZMW") @db.Char(3)
+  status              BookingStatus   @default(REQUESTED)
+  proposedScheduledAt DateTime?
+  proposedById        String?         @db.Uuid
+  statusReason        String?
+  confirmedAt         DateTime?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  cancelledById       String?         @db.Uuid
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @default(now()) @updatedAt
+
+  customer     User          @relation("BookingCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+  provider     Provider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  listing      Listing?      @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  messages     Message[]
+
+  @@index([customerId, scheduledAt])
+  @@index([providerId, status, scheduledAt])
+}
+
+/// One thread between a customer and a provider.
+model Conversation {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId         String    @db.Uuid
+  providerId         String    @db.Uuid
+  lastMessageAt      DateTime  @default(now())
+  lastMessagePreview String?
+  customerLastReadAt DateTime?
+  providerLastReadAt DateTime?
+  createdAt          DateTime  @default(now())
+
+  customer User      @relation("ConversationCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+  provider Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  messages Message[]
+  bookings Booking[]
+
+  @@unique([customerId, providerId])
+  @@index([providerId, lastMessageAt])
+  @@index([customerId, lastMessageAt])
+}
+
+model Message {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String      @db.Uuid
+  /// Null for system messages (booking status changes).
+  senderId       String?     @db.Uuid
+  kind           MessageKind @default(TEXT)
+  body           String
+  mediaId        String?     @db.Uuid
+  bookingId      String?     @db.Uuid
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?        @relation("MessageSender", fields: [senderId], references: [id], onDelete: SetNull)
+  media        Media?       @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  booking      Booking?     @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+}
+
+// ───────────────────────────── Notifications ─────────────────────────────
+
+model Notification {
+  id        String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String               @db.Uuid
+  category  NotificationCategory
+  title     String
+  body      String
+  data      Json                 @default("{}")
+  /// Collapses repeats, e.g. one "new enquiry" per enquiry id.
+  dedupeKey String?
+  readAt    DateTime?
+  createdAt DateTime             @default(now())
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt])
+}
+
+/// One push attempt per device. Processed by the delivery worker with retries and backoff.
+model NotificationDelivery {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notificationId String         @db.Uuid
+  deviceTokenId  String         @db.Uuid
+  status         DeliveryStatus @default(PENDING)
+  attempts       Int            @default(0)
+  nextAttemptAt  DateTime       @default(now())
+  ticketId       String?
+  lastError      String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now()) @updatedAt
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  deviceToken  DeviceToken  @relation(fields: [deviceTokenId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+}
+
+model NotificationPreference {
+  userId          String   @id @db.Uuid
+  pushEnabled     Boolean  @default(true)
+  emailEnabled    Boolean  @default(true)
+  /// Map of NotificationCategory -> enabled. Missing keys use defaults (PROMOTION off).
+  categories      Json     @default("{}")
+  quietHoursStart String?
+  quietHoursEnd   String?
+  maxPushPerDay   Int      @default(10)
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ───────────────────────────── Analytics ─────────────────────────────
+
+/// Raw events, pruned after the retention window once rolled up into ProviderAnalyticsDaily.
+model AnalyticsEvent {
+  id         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type       AnalyticsEventType
+  providerId String             @db.Uuid
+  listingId  String?            @db.Uuid
+  userId     String?            @db.Uuid
+  createdAt  DateTime           @default(now())
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId, createdAt])
+  @@index([createdAt])
+}
+
+model ProviderAnalyticsDaily {
+  providerId        String   @db.Uuid
+  date              DateTime @db.Date
+  profileViews      Int      @default(0)
+  listingViews      Int      @default(0)
+  searchAppearances Int      @default(0)
+  phoneClicks       Int      @default(0)
+  whatsappClicks    Int      @default(0)
+  emailClicks       Int      @default(0)
+  enquiries         Int      @default(0)
+  favorites         Int      @default(0)
+  reviews           Int      @default(0)
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@id([providerId, date])
+}
+
+// ───────────────────────────── Monetization (architecture only, no live payments) ─────────────────────────────
+
+model SubscriptionPlan {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code         String   @unique
+  name         String
+  description  String?
+  priceMonthly Decimal  @db.Decimal(12, 2)
+  currency     String   @default("ZMW") @db.Char(3)
+  /// e.g. { "maxListings": 5, "maxPortfolioMedia": 20, "advancedAnalytics": false, "maxLocations": 1 }
+  entitlements Json     @default("{}")
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  subscriptions ProviderSubscription[]
+  payments      Payment[]
+}
+
+model ProviderSubscription {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId         String             @db.Uuid
+  planId             String             @db.Uuid
+  status             SubscriptionStatus
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @default(now()) @updatedAt
+
+  provider Provider         @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  plan     SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([providerId, status])
+}
+
+/// Per-provider overrides on top of the plan (e.g. a grant from an admin).
+model Entitlement {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId String    @db.Uuid
+  key        String
+  value      Int
+  source     String
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, key, source])
+}
+
+/// A sponsored placement. Search labels promoted results as sponsored.
+model ListingPromotion {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId   String          @db.Uuid
+  providerId  String          @db.Uuid
+  placement   String          @default("SEARCH")
+  status      PromotionStatus @default(SCHEDULED)
+  startsAt    DateTime
+  endsAt      DateTime
+  paymentId   String?         @db.Uuid
+  createdById String?         @db.Uuid
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now()) @updatedAt
+
+  listing  Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  payment  Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([status, startsAt, endsAt])
+  @@index([listingId])
+}
+
+/// A collection from a provider to Vicinity (plan purchase). Success is only ever set from a
+/// verified gateway webhook or a server-side status lookup, never from the client.
+model Payment {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId    String        @db.Uuid
+  /// The user who started the payment (the provider's owner).
+  payerId       String?       @db.Uuid
+  amount        Decimal       @db.Decimal(12, 2)
+  currency      String        @default("ZMW") @db.Char(3)
+  gateway       String
+  /// Reference sent to the gateway. For Lenco this is the payment id itself.
+  gatewayRef    String?
+  /// SUBSCRIPTION (plan purchase). PROMOTION is reserved for paid listing boosts.
+  purpose       String
+  status        PaymentStatus @default(PENDING)
+  method        String        @default("MOBILE_MONEY")
+  payerPhone    String?
+  planId        String?       @db.Uuid
+  months        Int?
+  failureReason String?
+  expiresAt     DateTime?
+  lastCheckedAt DateTime?
+  succeededAt   DateTime?
+  /// Set once the purchase has been applied (subscription extended). Guards against double-apply.
+  appliedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+
+  provider   Provider           @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  payer      User?              @relation("PaymentPayer", fields: [payerId], references: [id], onDelete: SetNull)
+  plan       SubscriptionPlan?  @relation(fields: [planId], references: [id], onDelete: Restrict)
+  promotions ListingPromotion[]
+
+  @@unique([gateway, gatewayRef])
+  @@index([providerId, createdAt])
+  @@index([status, lastCheckedAt])
+}
+
+/// Verified gateway webhook events, stored once per (gateway, eventId) so redeliveries are idempotent.
+model PaymentEvent {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gateway     String
+  eventId     String
+  type        String
+  gatewayRef  String
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  error       String?
+
+  @@unique([gateway, eventId])
+  @@index([gatewayRef])
+}
+
+enum OtpPurpose {
+  /// Phone sign-in / sign-up.
+  LOGIN
+  /// A signed-in user adding or changing their phone number.
+  PHONE_VERIFY
+}
+
+/// One-time SMS codes (ported from TUMA). The code is never stored: only an HMAC of it keyed with
+/// OTP_PEPPER and the challenge id. Short-lived, attempt-limited, single-use.
+model OtpChallenge {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purpose       OtpPurpose
+  phone         String
+  userId        String?    @db.Uuid
+  codeHash      String
+  expiresAt     DateTime
+  attempts      Int        @default(0)
+  maxAttempts   Int        @default(5)
+  consumedAt    DateTime?
+  invalidatedAt DateTime?
+  requestIp     String?
+  createdAt     DateTime   @default(now())
+
+  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries OtpDelivery[]
+
+  @@index([purpose, phone, createdAt])
+  @@index([requestIp, createdAt])
+}
+
+/// What happened to each attempt to deliver a code (never the code itself).
+model OtpDelivery {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengeId       String   @db.Uuid
+  channel           String
+  status            String
+  providerMessageId String?
+  error             String?
+  createdAt         DateTime @default(now())
+
+  challenge OtpChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+}

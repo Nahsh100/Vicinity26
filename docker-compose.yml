@@ -1,0 +1,37 @@
+name: vicinity
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vicinity
+      POSTGRES_PASSWORD: vicinity_dev_password
+      POSTGRES_DB: vicinity
+    ports:
+      - "5433:5432"
+    volumes:
+      - vicinity_pg:/var/lib/postgresql/data
+      - ./infrastructure/db/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vicinity -d vicinity"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: apps/api/.env
+    environment:
+      DATABASE_URL: postgresql://vicinity:vicinity_dev_password@db:5432/vicinity
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  vicinity_pg:

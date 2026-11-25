@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+/* Vicinity design tokens (packages/shared/src/tokens.ts) */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #00a896;
+  --color-primary-dark: #006b5f;
+  --color-primary-soft: #e6f8f5;
+  --color-navy: #0f2438;
+  --color-ink: #0b1c30;
+  --color-ink-muted: #3c4946;
+  --color-muted: #64748b;
+  --color-surface: #f8f9ff;
+  --color-surface-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-line: #e2e8f0;
+  --color-amber: #f59e0b;
+  --color-amber-soft: #fef3c7;
+  --color-error: #ba1a1a;
+  --color-error-soft: #ffdad6;
+  --color-secondary-fixed: #d0e4ff;
+  --radius-card: 16px;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "Vicinity",
+    "slug": "vicinity-zambia",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "vicinity",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "zm.vicinity.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Vicinity uses your location to show services and products near you.",
+        "NSPhotoLibraryUsageDescription": "Choose photos for your profile, listings and portfolio.",
+        "NSCameraUsageDescription": "Take photos for your profile, listings and portfolio."
+      }
+    },
+    "android": {
+      "package": "zm.vicinity.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#00A896"
+      },
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-image",
+      "expo-font",
+      "expo-splash-screen",
+      "expo-web-browser",
+      [
+        "expo-location",
+        { "locationWhenInUsePermission": "Vicinity uses your location to show services and products near you." }
+      ],
+      [
+        "expo-image-picker",
+        { "photosPermission": "Choose photos for your profile, listings and portfolio." }
+      ],
+      ["expo-notifications", { "color": "#00A896" }]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "eas": { "projectId": "" }
+    }
+  }
+}

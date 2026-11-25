@@ -1,0 +1,19 @@
+# Keep secrets, host-built dependencies and build output out of the Docker build context.
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+**/dist
+**/.next
+**/.expo
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+apps/api/storage
+apps/api/src/generated
+apps/mobile
+apps/admin
+design
+.git
+.github
+.claude

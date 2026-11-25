@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vicinity-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@vicinity/mobile", "exec", "expo", "start", "--web", "--port", "8081", "--clear"],
+      "port": 8081
+    },
+    {
+      "name": "vicinity-admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@vicinity/admin", "dev"],
+      "port": 3001
+    }
+  ]
+}
