@@ -16,3 +16,7 @@ apps/api/src/generated/
 ios/
 android/
 apps/api/storage-test/
+
+# Service-account and private keys (never commit)
+*firebase-adminsdk*.json
+*serviceAccount*.json

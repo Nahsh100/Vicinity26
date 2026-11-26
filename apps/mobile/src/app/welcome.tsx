@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@vicinity/shared';
 import { Logo } from '@/components/AppHeader';
+import { BrandLockup } from '@/components/brand/Brand';
 import { Button, Icon, Txt } from '@/components/ui';
 import { prefsStorage } from '@/lib/storage';
 
@@ -28,16 +29,20 @@ export default function Welcome() {
     <SafeAreaView className="flex-1 bg-surface">
       <View className="w-full max-w-md flex-1 self-center justify-between px-6 py-6">
         <View className="flex-row items-center justify-between">
-          <Logo />
+          {i === 0 ? <View /> : <Logo />}
           <Button title="Skip" kind="ghost" size="sm" onPress={() => void finish('/location-permission')} />
         </View>
 
         <View className="items-center gap-5">
+          {i === 0 ? (
+            <BrandLockup width={240} />
+          ) : (
           <View className="h-44 w-44 items-center justify-center rounded-full bg-primary-soft">
             <View className="h-28 w-28 items-center justify-center rounded-full bg-primary-fixed/50">
               <Icon name={s.icon} size={56} color={colors.primaryDark} />
             </View>
           </View>
+          )}
           <Txt variant="headline-lg" className="text-center">{s.title}</Txt>
           <Txt variant="body-lg" className="text-center text-ink-muted">{s.body}</Txt>
           <View className="flex-row gap-1.5" accessibilityLabel={`Step ${i + 1} of ${SLIDES.length}`}>

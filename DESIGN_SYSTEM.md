@@ -38,6 +38,24 @@ Copy deviations: Stitch claims about escrow, payments and ID vetting are replace
 
 Screens not in Stitch (auth, onboarding, provider wizard, dashboard pages, organizations, settings, help) reuse the same components and tokens.
 
+## Brand
+
+Sources live in `apps/mobile/assets/brand/` (the designer's SVGs). Run `pnpm --filter @vicinity/mobile brand` after changing them; it regenerates every derived file.
+
+| Where | Artwork |
+|---|---|
+| App header, desktop nav, footer, hub sidebar, sign-in screens | `Logo`: the **light** small symbol + spaced `VICINITY` wordmark (`#06332E`) |
+| Welcome screen (first slide) | `BrandLockup`: the **light** stacked lockup with "Verified local network" |
+| iOS / default app icon | Light tile (white → `#E2F6F1`) with the light small symbol, full bleed, no transparency |
+| Android adaptive icon | Light symbol foreground in the safe zone, light gradient background, black one-colour mark for themed icons |
+| Splash screen | Detailed **light** symbol on white |
+| Android notification icon | White one-colour mark (the system tints it) |
+| Browser-tab favicon (web + admin) | The designer's favicon kit (built to read on light and dark tabs) |
+| Home-screen icons (Apple touch, PWA, maskable) | Same light tile as the native icon |
+| Link previews (`og:image`) | Light lockup on white, 1200 × 630 |
+| Admin sidebar and login | Light small symbol + `VICINITY` wordmark |
+
+Use the **small** symbol below 64 px (the clock ticks blur) and the detailed one above. `BrandMark`/`Logo`/`BrandLockup` take `tone="dark"` for dark backgrounds (dark artwork, light wordmark).
 ## Accessibility
 
 44 px+ touch targets for primary actions, labelled icon buttons, `accessibilityRole`/state on toggles, tabs and chips, text never conveyed by colour alone (badges carry text/icons), charts expose their data as text, status colours always come with labels.

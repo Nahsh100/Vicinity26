@@ -54,9 +54,9 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen">
         <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-white p-4 md:flex">
           <div className="mb-6 flex items-center gap-2 px-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white">➤</span>
+            <img src="/brand/vicinity-symbol-small-light.svg" alt="" width={34} height={34} />
             <div>
-              <p className="font-bold text-navy">Vicinity</p>
+              <p className="font-bold tracking-[0.18em] text-[#06332E]">VICINITY</p>
               <p className="text-[11px] text-muted">Administration</p>
             </div>
           </div>

@@ -25,10 +25,10 @@ function LoginForm() {
   return (
     <form onSubmit={submit} className="mx-auto mt-24 flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-8 shadow-lg">
       <div className="flex items-center gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">➤</span>
+        <img src="/brand/vicinity-symbol-small-light.svg" alt="" width={40} height={40} />
         <div>
-          <h1 className="text-lg font-bold text-navy">Vicinity Admin</h1>
-          <p className="text-xs text-muted">Authorised staff only</p>
+          <h1 className="text-lg font-bold tracking-[0.14em] text-[#06332E]">VICINITY</h1>
+          <p className="text-xs text-muted">Admin · authorised staff only</p>
         </div>
       </div>
       <Input label="Email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />

@@ -7,18 +7,20 @@ import { useAuth } from '@/store/auth';
 import { useLocation } from '@/store/location';
 import { LocationSheet } from './LocationSheet';
 import { useWide } from './Screen';
+import { BRAND_INK, BrandMark, type BrandTone } from './brand/Brand';
 import { Button, Icon, Thumb, Txt } from './ui';
 
-/** Brand mark: teal disc with the navigation arrow, plus the wordmark. */
-export function Logo({ compact, size = 36 }: { compact?: boolean; size?: number }) {
+/**
+ * Horizontal logo: the brand symbol plus the spaced VICINITY wordmark from the lockup.
+ * `tone="light"` (default) for light surfaces, `"dark"` on dark backgrounds.
+ */
+export function Logo({ compact, size = 36, tone = 'light' }: { compact?: boolean; size?: number; tone?: BrandTone }) {
   return (
     <Pressable onPress={() => router.push('/')} accessibilityRole="link" accessibilityLabel="Vicinity home" className="flex-row items-center gap-2">
-      <View style={{ width: size, height: size }} className="items-center justify-center rounded-full bg-primary-dark">
-        <Icon name="near_me" size={size * 0.52} color="#FFFFFF" />
-      </View>
+      <BrandMark size={size} tone={tone} />
       {!compact ? (
-        <Txt variant="headline-md" className="text-navy" style={{ fontSize: size * 0.6, letterSpacing: -0.6 }}>
-          Vicinity
+        <Txt variant="headline-md" style={{ fontSize: size * 0.5, letterSpacing: size * 0.09, color: BRAND_INK[tone] }}>
+          VICINITY
         </Txt>
       ) : null}
     </Pressable>
