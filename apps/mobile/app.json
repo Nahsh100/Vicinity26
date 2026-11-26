@@ -69,6 +69,14 @@
           "icon": "./assets/notification-icon.png",
           "color": "#0EA88E"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "# Room creates <Database>_Impl by reflection; without these R8 strips it and WorkManager\n# (used by push notifications) crashes the app at launch.\n-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep class androidx.work.impl.WorkDatabase_Impl { *; }\n-keep class androidx.work.** { *; }\n-dontwarn androidx.work.**"
+          }
+        }
       ]
     ],
     "experiments": {
