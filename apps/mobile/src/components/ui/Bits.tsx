@@ -32,6 +32,7 @@ export function Chip({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: !!active }}
+      accessibilityLabel={count !== undefined ? `${label} (${count})` : label}
       onPress={onPress}
       className={`${size === 'lg' ? 'h-10 px-4' : 'h-8 px-3'} flex-row items-center gap-1 rounded-full ${active ? 'bg-primary' : 'bg-surface-container-low active:bg-surface-container'}`}
     >

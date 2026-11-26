@@ -1,7 +1,8 @@
+import { shareLink, webLink } from '@/lib/share';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Share, View } from 'react-native';
+import { View } from 'react-native';
 import { colors, groupSchema, timeAgo } from '@vicinity/shared';
 import { confirmAction, notify } from '@/components/ReviewCard';
 import { ReportSheet } from '@/components/ReportSheet';
@@ -49,7 +50,7 @@ export default function OrganizationDetail() {
   };
 
   return (
-    <Screen back title={o.name} right={<IconButton icon="flag" label="Report organization" onPress={() => setReport(true)} />}>
+    <Screen back title={o.name} right={o.myRole === 'OWNER' ? undefined : <IconButton icon="flag" label="Report organization" onPress={() => setReport(true)} />}>
       <View className="gap-4 px-margin">
         <Card className="gap-3 p-4">
           <View className="flex-row items-center gap-3">
@@ -58,7 +59,7 @@ export default function OrganizationDetail() {
               <Txt variant="headline-sm">{o.name}</Txt>
               <Txt variant="body-sm" className="text-on-surface-variant">{o.type.toLowerCase()}{o.locationName ? ` · ${o.locationName}` : ''}</Txt>
               <View className="flex-row flex-wrap gap-1.5">
-                <Badge label={`${o.memberCount} members`} tone="neutral" icon="group" />
+                <Badge label={`${o.memberCount} member${o.memberCount === 1 ? '' : 's'}`} tone="neutral" icon="group" />
                 {o.isPrivate ? <Badge label="Invite only" tone="neutral" icon="lock" /> : <Badge label="Public" tone="teal" />}
                 {o.myRole ? <Badge label={`You: ${o.myRole.toLowerCase()}`} tone="navy" /> : null}
               </View>
@@ -94,7 +95,7 @@ export default function OrganizationDetail() {
                 <View className="h-10 w-10 items-center justify-center rounded-full bg-surface-low"><Icon name="workspaces" size={20} color={colors.primaryDark} /></View>
                 <View className="flex-1">
                   <Txt variant="label-lg">{g.name}</Txt>
-                  <Txt variant="body-sm" className="text-on-surface-variant">{g.memberCount} members{g.isPrivate ? ' · private' : ''}</Txt>
+                  <Txt variant="body-sm" className="text-on-surface-variant">{g.memberCount} member{g.memberCount === 1 ? '' : 's'}{g.isPrivate ? ' · private' : ''}</Txt>
                 </View>
                 {g.myRole ? <Badge label={g.myRole.toLowerCase()} tone="teal" /> : isMember && !g.isPrivate ? <Button title="Join" size="sm" kind="outline" onPress={() => joinGroup.mutate(g.id)} /> : null}
               </Card>
@@ -154,8 +155,7 @@ export default function OrganizationDetail() {
 }
 
 async function shareInvite(orgName: string, code: string) {
-  const url = Platform.OS === 'web' ? `${window.location.origin}/invite/${code}` : `vicinity://invite/${code}`;
-  await Share.share({ message: `Join ${orgName} on Vicinity: ${url} (code ${code})` });
+  await shareLink({ title: `Join ${orgName}`, text: `Join ${orgName} on Vicinity (code ${code}):`, url: webLink(`/invite/${code}`) });
 }
 
 function GroupSheet({ visible, onClose, orgId, onCreated }: { visible: boolean; onClose: () => void; orgId: string; onCreated: () => void }) {

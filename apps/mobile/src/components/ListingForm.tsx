@@ -128,7 +128,7 @@ export function ListingForm({
 
       <View className="gap-1.5">
         <Txt variant="label-md" className="text-ink-muted">Category</Txt>
-        <Pressable onPress={() => setCatOpen(true)} accessibilityRole="button" className={`h-12 flex-row items-center justify-between rounded-2xl border bg-white px-4 ${formState.errors.categoryId ? 'border-error' : 'border-surface-container'}`}>
+        <Pressable onPress={() => setCatOpen(true)} accessibilityRole="button" accessibilityLabel={`Category: ${catName ?? 'not chosen'}`} className={`h-12 flex-row items-center justify-between rounded-2xl border bg-white px-4 ${formState.errors.categoryId ? 'border-error' : 'border-surface-container'}`}>
           <Txt variant="body-lg" className={catName ? 'text-ink' : 'text-placeholder'}>{catName ?? 'Choose a category'}</Txt>
           <Icon name="expand_more" size={20} color={colors.muted} />
         </Pressable>

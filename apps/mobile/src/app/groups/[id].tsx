@@ -1,3 +1,4 @@
+import { plural } from '@/lib/share';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -46,7 +47,7 @@ export default function GroupDetail() {
           <Txt variant="headline-sm">{g.name}</Txt>
           {g.description ? <Txt variant="body-md" className="text-ink-muted">{g.description}</Txt> : null}
           <View className="flex-row flex-wrap gap-1.5">
-            <Badge label={`${g.memberCount} members`} tone="neutral" icon="group" />
+            <Badge label={plural(g.memberCount, 'member')} tone="neutral" icon="group" />
             {g.isPrivate ? <Badge label="Private" tone="neutral" icon="lock" /> : null}
             {g.myRole ? <Badge label={`You: ${g.myRole.toLowerCase()}`} tone="teal" /> : null}
           </View>

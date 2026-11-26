@@ -1,7 +1,8 @@
+import { shareLink, webLink } from '@/lib/share';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, Share, View } from 'react-native';
+import { Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   colors,
@@ -97,8 +98,7 @@ export default function ProviderProfile() {
 }
 
 function share(p: ProviderDetail) {
-  const url = Platform.OS === 'web' ? window.location.href : `vicinity://provider/${p.slug}`;
-  void Share.share({ message: `${p.displayName} on Vicinity: ${url}` });
+  void shareLink({ title: p.displayName, text: `${p.displayName} on Vicinity:`, url: webLink(`/provider/${p.slug}`) });
 }
 
 // ───────────────────────────── Mobile ─────────────────────────────
@@ -112,7 +112,8 @@ function MobileProvider({ data, p, onReport, openBooking }: { data: Data; p: Pro
   const [project, setProject] = useState<PortfolioProject | null>(null);
   const open = isOpenNow(p.workingHours);
   const primary = p.locations[0];
-  const canBook = p.sections.services > 0;
+  // Owners see their own storefront as customers do, minus the booking actions (the API refuses self-bookings).
+  const canBook = p.sections.services > 0 && !p.isOwner;
   const tabs = useTabs(p, data);
   const activeTab = tabs.find((t) => t.key === tab) ? tab : (tabs[0]?.key ?? 'reviews');
   const toggleSave = () => (signedIn ? save.mutate({ id: p.id, save: !p.isSaved }) : router.push('/login'));
@@ -180,7 +181,11 @@ function MobileProvider({ data, p, onReport, openBooking }: { data: Data; p: Pro
             {canBook ? (
               <Button title="Book Appointment" icon="calendar_add_on" className="flex-1" onPress={() => setBooking({ open: true })} />
             ) : (
-              <Button title="Send enquiry" icon="forum" className="flex-1" onPress={() => setEnquiry(true)} />
+              p.isOwner ? (
+                <Button title="Edit storefront" icon="edit" className="flex-1" onPress={() => router.push('/dashboard/profile')} />
+              ) : (
+                <Button title="Send enquiry" icon="forum" className="flex-1" onPress={() => setEnquiry(true)} />
+              )
             )}
             {p.phone ? <IconButton icon="call" tone="neutral" size={44} label={`Call ${p.displayName}`} onPress={() => callProvider(p.id, p.phone!)} /> : null}
             {!p.isOwner ? <IconButton icon="chat" tone="tertiary" size={44} label={`Message ${p.displayName}`} onPress={() => void openChat(p.id)} /> : null}
@@ -215,7 +220,7 @@ function MobileProvider({ data, p, onReport, openBooking }: { data: Data; p: Pro
         </ScrollView>
 
         {activeTab === 'services' || activeTab === 'products' ? (
-          <OffersSection items={(activeTab === 'services' ? data.services : data.products).data ?? []} loading={(activeTab === 'services' ? data.services : data.products).isLoading} kind={activeTab} onSelect={(l) => (l.type === 'SERVICE' ? setBooking({ open: true, listingId: l.id }) : router.push(`/listing/${l.id}`))} />
+          <OffersSection items={(activeTab === 'services' ? data.services : data.products).data ?? []} loading={(activeTab === 'services' ? data.services : data.products).isLoading} kind={activeTab} owner={p.isOwner} onSelect={(l) => (l.type === 'SERVICE' && !p.isOwner ? setBooking({ open: true, listingId: l.id }) : router.push(`/listing/${l.id}`))} />
         ) : null}
         {activeTab === 'portfolio' ? <PortfolioSection data={data} onOpen={setProject} /> : null}
         {activeTab === 'reviews' ? <ReviewsSection data={data} p={p} /> : null}
@@ -244,7 +249,11 @@ function MobileProvider({ data, p, onReport, openBooking }: { data: Data; p: Pro
             {canBook ? (
               <Button title="Request Booking" iconRight="arrow_forward" onPress={() => setBooking({ open: true })} />
             ) : (
-              <Button title="Send enquiry" iconRight="arrow_forward" onPress={() => setEnquiry(true)} />
+              p.isOwner ? (
+                <Button title="My dashboard" iconRight="arrow_forward" onPress={() => router.push('/dashboard')} />
+              ) : (
+                <Button title="Send enquiry" iconRight="arrow_forward" onPress={() => setEnquiry(true)} />
+              )
             )}
           </View>
         </SafeAreaView>
@@ -379,7 +388,8 @@ function WebProvider({ data, p, onReport }: { data: Data; p: ProviderDetail; onR
                 items={(activeTab === 'services' ? data.services : data.products).data ?? []}
                 loading={(activeTab === 'services' ? data.services : data.products).isLoading}
                 kind={activeTab}
-                onSelect={(l) => (l.type === 'SERVICE' ? setSelected(l.id) : router.push(`/listing/${l.id}`))}
+                owner={p.isOwner}
+                onSelect={(l) => (l.type === 'SERVICE' && !p.isOwner ? setSelected(l.id) : router.push(`/listing/${l.id}`))}
               />
             ) : null}
             {activeTab === 'portfolio' ? <PortfolioSection data={data} onOpen={setProject} web /> : null}
@@ -455,7 +465,7 @@ function TrustPill({ icon, label, tone = 'neutral' }: { icon: string; label: str
   );
 }
 
-function OffersSection({ items, loading, kind, onSelect, web }: { items: ListingSummary[]; loading: boolean; kind: 'services' | 'products'; onSelect: (l: ListingSummary) => void; web?: boolean }) {
+function OffersSection({ items, loading, kind, onSelect, web, owner }: { items: ListingSummary[]; loading: boolean; kind: 'services' | 'products'; onSelect: (l: ListingSummary) => void; web?: boolean; owner?: boolean }) {
   return (
     <View className="gap-3">
       <View className="flex-row items-end justify-between pt-1">
@@ -489,7 +499,7 @@ function OffersSection({ items, loading, kind, onSelect, web }: { items: Listing
             <View className="items-end gap-1.5">
               <Txt variant="headline-md">{formatPrice(l).replace(/^From /, '')}</Txt>
               <Txt variant="label-sm" className="text-on-surface-variant">{l.priceType === 'STARTING_FROM' ? 'starting rate' : l.priceType === 'HOURLY' ? 'per hour' : l.priceType === 'FIXED' ? 'fixed rate' : ''}</Txt>
-              <Button title={l.type === 'SERVICE' ? 'Book This' : 'View'} size="sm" onPress={() => onSelect(l)} />
+              <Button title={l.type === 'SERVICE' && !owner ? 'Book This' : 'View'} size="sm" onPress={() => onSelect(l)} />
             </View>
           </View>
         ) : (
@@ -513,7 +523,7 @@ function OffersSection({ items, loading, kind, onSelect, web }: { items: Listing
                 <Icon name="check_circle" size={14} color={colors.tertiary} />
                 <Txt variant="label-sm" className="text-secondary">{l.category.name}</Txt>
               </View>
-              <Button title={l.type === 'SERVICE' ? 'Select' : 'View'} size="sm" onPress={() => onSelect(l)} />
+              <Button title={l.type === 'SERVICE' && !owner ? 'Select' : 'View'} size="sm" onPress={() => onSelect(l)} />
             </View>
           </View>
         ),

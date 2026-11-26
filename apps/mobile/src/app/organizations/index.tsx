@@ -1,3 +1,4 @@
+import { plural } from '@/lib/share';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -13,7 +14,7 @@ export function OrgRow({ o }: { o: Organization }) {
       <Thumb uri={o.logoUrl} name={o.name} icon="groups" size={52} />
       <View className="flex-1 gap-0.5">
         <Txt variant="headline-sm" numberOfLines={1}>{o.name}</Txt>
-        <Txt variant="body-sm" className="text-on-surface-variant">{o.type.toLowerCase()} · {o.memberCount} members · {o.groupCount} groups</Txt>
+        <Txt variant="body-sm" className="text-on-surface-variant">{o.type.toLowerCase()} · {plural(o.memberCount, 'member')} · {plural(o.groupCount, 'group')}</Txt>
         <View className="flex-row gap-1.5">
           {o.myRole ? <Badge label={o.myRole.toLowerCase()} tone="teal" /> : null}
           {o.isPrivate ? <Badge label="Invite only" tone="neutral" icon="lock" /> : null}

@@ -21,6 +21,7 @@ export default function ListingDetail() {
   const l = q.data;
   const save = useToggleSaveListing();
   const signedIn = useAuth((s) => s.status === 'signedIn');
+  const myProviderId = useAuth((s) => s.user?.providerId ?? null);
   const [enquiry, setEnquiry] = useState(false);
   const [report, setReport] = useState(false);
   const [booking, setBooking] = useState(false);
@@ -49,14 +50,16 @@ export default function ListingDetail() {
       </View>
       <ScrollView contentContainerClassName="w-full max-w-3xl self-center pb-36 gap-4">
         {l.media.length ? (
-          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ height: 260, flexGrow: 0 }}>
             {l.media.map((m) =>
               m.kind === 'VIDEO' ? (
                 <View key={m.id} style={{ width, height: 260 }} className="items-center justify-center bg-surface-container">
                   <Button title="Play video" icon="play_circle" kind="secondary" onPress={() => void Linking.openURL(m.url)} />
                 </View>
               ) : (
-                <Image key={m.id} source={{ uri: m.url }} style={{ width, height: 260 }} contentFit="cover" />
+                <View key={m.id} style={{ width, height: 260 }}>
+                  <Image source={{ uri: m.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" accessibilityLabel={l.title} />
+                </View>
               ),
             )}
           </ScrollView>
@@ -103,10 +106,12 @@ export default function ListingDetail() {
 
       <View className="absolute bottom-0 left-0 right-0 border-t border-surface-container bg-white/95 px-margin py-3">
         <SafeAreaView edges={['bottom']} className="w-full max-w-3xl flex-row items-center gap-2 self-center">
-          {l.provider.phone ? <IconButton icon="call" tone="primary" size={48} label="Call" onPress={() => callProvider(l.provider.id, l.provider.phone!, l.id)} /> : null}
-          {l.provider.whatsapp ? <IconButton icon="chat" tone="whatsapp" size={48} label="WhatsApp" onPress={() => whatsappProvider(l.provider.id, l.provider.whatsapp!, l.id, `Hi! I saw "${l.title}" on Vicinity.`)} /> : null}
-          <IconButton icon="sms" tone="tertiary" size={48} label="Message in app" onPress={() => void openChat(l.provider.id)} />
-          {l.type === 'SERVICE' ? (
+          {l.provider.id !== myProviderId && l.provider.phone ? <IconButton icon="call" tone="primary" size={48} label="Call" onPress={() => callProvider(l.provider.id, l.provider.phone!, l.id)} /> : null}
+          {l.provider.id !== myProviderId && l.provider.whatsapp ? <IconButton icon="chat" tone="whatsapp" size={48} label="WhatsApp" onPress={() => whatsappProvider(l.provider.id, l.provider.whatsapp!, l.id, `Hi! I saw "${l.title}" on Vicinity.`)} /> : null}
+          {l.provider.id !== myProviderId ? <IconButton icon="sms" tone="tertiary" size={48} label="Message in app" onPress={() => void openChat(l.provider.id)} /> : null}
+          {l.provider.id === myProviderId ? (
+            <Button title="Edit listing" icon="edit" className="flex-1" onPress={() => router.push(`/dashboard/listing/${l.id}`)} />
+          ) : l.type === 'SERVICE' ? (
             <Button title="Book now" icon="event_available" className="flex-1" onPress={() => (signedIn ? setBooking(true) : router.push('/login'))} />
           ) : (
             <Button title="Send enquiry" icon="forum" className="flex-1" onPress={() => setEnquiry(true)} />

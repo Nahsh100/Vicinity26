@@ -131,6 +131,7 @@ Use EAS: `npx eas-cli@latest init`, then `eas build --platform android|ios` and 
 | Variable | Value |
 |---|---|
 | `EXPO_PUBLIC_API_URL` | `https://<api-domain>` |
+| `EXPO_PUBLIC_WEB_URL` | `https://vicinityzambia.com` |
 | `EXPO_PUBLIC_MAP_STYLE_URL` | optional: leave empty for the free OpenFreeMap street map, or a MapTiler/Stadia style URL with your key |
 
 ### Vercel: admin (`apps/admin`)

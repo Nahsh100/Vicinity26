@@ -52,6 +52,7 @@ The API validates its configuration at startup and refuses to start on missing s
 | Variable | Description |
 |---|---|
 | `EXPO_PUBLIC_API_URL` | API base URL. Phone on the same Wi-Fi: `http://<your-LAN-IP>:4000`; Android emulator: `http://10.0.2.2:4000` |
+| `EXPO_PUBLIC_WEB_URL` | Public web address for shared links (default `https://vicinityzambia.com`) |
 | `EXPO_PUBLIC_MAP_STYLE_URL` | Optional web map style. Default OpenFreeMap (no key). Any MapLibre style URL works (MapTiler, Stadia…); `off` = radar view |
 | `GOOGLE_MAPS_ANDROID_API_KEY` | Native Android builds only (EAS/`expo run`): Google Maps SDK for Android key, read by `app.config.js`. iOS needs none |
 
