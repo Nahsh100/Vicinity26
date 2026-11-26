@@ -28,7 +28,7 @@ const schema = z
     SMTP_PORT: z.coerce.number().int().default(587),
     SMTP_USER: z.string().optional().default(''),
     SMTP_PASSWORD: z.string().optional().default(''),
-    MAIL_FROM: z.string().default('Vicinity <no-reply@vicinity.co.zm>'),
+    MAIL_FROM: z.string().default('Vicinity <no-reply@vicinityzambia.com>'),
     EXPO_ACCESS_TOKEN: z.string().optional().default(''),
     PUSH_ENABLED: bool.default(true),
     THROTTLE_TTL_SECONDS: z.coerce.number().int().positive().default(60),
@@ -52,6 +52,11 @@ const schema = z
     SMS_SENDER_ID: z.string().min(1).max(11).default('Vicinity'),
     /** Android SMS Retriever app hash (11 chars), appended so the app can read its own code. Optional. */
     SMS_APP_HASH: z.string().length(11).optional().or(z.literal('')).default(''),
+    // ── Google / Apple sign-in. Each is off until its client IDs are set. ──
+    /** Comma-separated OAuth client IDs accepted as the `aud` of Google ID tokens (web client ID; add iOS/Android IDs if used). */
+    GOOGLE_CLIENT_IDS: z.string().optional().default(''),
+    /** Comma-separated accepted `aud` values for Apple identity tokens: the iOS bundle ID (and a Services ID for web, later). */
+    APPLE_CLIENT_IDS: z.string().optional().default(''),
   })
   .superRefine((v, ctx) => {
     if (v.STORAGE_DRIVER === 'r2') {

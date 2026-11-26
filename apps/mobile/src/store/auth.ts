@@ -14,6 +14,8 @@ interface AuthState {
   register(input: RegisterInput): Promise<CurrentUser>;
   /** Phone sign-in: verifies the SMS code; `isNewUser` means the account was just created. */
   loginWithPhone(phone: string, code: string): Promise<{ user: CurrentUser; isNewUser: boolean }>;
+  /** Google / Apple sign-in with the provider's ID token (verified by the API). */
+  loginWithSocial(provider: 'google' | 'apple', idToken: string, fullName?: string): Promise<{ user: CurrentUser; isNewUser: boolean }>;
   logout(): Promise<void>;
   refreshUser(): Promise<CurrentUser | null>;
   setUser(u: CurrentUser): void;
@@ -61,6 +63,14 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   async loginWithPhone(phone, code) {
     const r = await api.post<{ tokens: AuthTokens; user: CurrentUser; isNewUser: boolean }>('/auth/phone/verify', { phone, code });
+    await tokens.save(r.tokens);
+    queryClient.clear();
+    set({ status: 'signedIn', user: r.user });
+    return { user: r.user, isNewUser: r.isNewUser };
+  },
+
+  async loginWithSocial(provider, idToken, fullName) {
+    const r = await api.post<{ tokens: AuthTokens; user: CurrentUser; isNewUser: boolean }>('/auth/social', { provider, idToken, fullName });
     await tokens.save(r.tokens);
     queryClient.clear();
     set({ status: 'signedIn', user: r.user });

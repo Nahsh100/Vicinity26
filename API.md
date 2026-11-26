@@ -67,6 +67,24 @@ How codes work:
 - A code lasts 5 minutes and allows 5 attempts.
 - It is stored only as an HMAC (keyed with `OTP_PEPPER`) and can be used once.
 - Requesting a new code cancels the previous one.
+
+**Admin notifications** (permission `notifications.send`, held by Super admin and the Communications role). Endpoints:
+
+- `GET /admin/notifications/audience?audience=ALL|CUSTOMERS|PROVIDERS|USERS&userIds=` returns `{ count }` of active users.
+- `POST /admin/notifications/broadcasts` takes `{ title (≤80), body (≤300), category: SYSTEM|PROMOTION, audience, userIds?, link?, linkLabel? }`.
+  - The response is immediate; sending runs in the background.
+  - `link` must be an in-app path such as `/search`; full URLs and `//host` are refused.
+- `GET /admin/notifications/broadcasts` (history) and `GET /admin/notifications/broadcasts/:id`.
+
+How sending works:
+
+- Every recipient gets a normal notification with `data.type = "broadcast"`.
+  - `SYSTEM` announcements reach everyone in the audience.
+  - `PROMOTION` reaches only users who opted in.
+- Push follows each user's settings.
+- Each send uses the dedupe key `broadcast:<id>`, so an interrupted send resumes on restart without notifying anyone twice.
+
+**Push payloads** carry the notification's `data` plus `notificationId` and `category`, and use the Android channel `default`. Tapping a push marks the notification read and opens the matching screen (`apps/mobile/src/lib/notificationRoutes.ts`). The Alerts tab uses the same mapping.
 **Payments** (plan purchases, Lenco mobile money). Endpoints:
 
 - `POST /payments/subscriptions` takes `{ planCode, months: 1|3|6|12, phone }` and sends a USSD prompt to the phone.

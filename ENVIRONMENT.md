@@ -38,6 +38,8 @@ Never commit `.env` files. Templates: `apps/api/.env.example`, `apps/mobile/.env
 | `ZAMTEL_SMS_BASE_URL` | | Default `https://bulksms.zamtel.co.zm/api/v2.1/action/send` |
 | `SMS_SENDER_ID` | | Sender id registered with Zamtel (max 11 chars). Default `Vicinity` |
 | `SMS_APP_HASH` | | Optional Android SMS Retriever hash (11 chars) for code autofill |
+| `GOOGLE_CLIENT_IDS` | google | Comma-separated Google OAuth client IDs accepted as the ID token audience (the Web client ID) |
+| `APPLE_CLIENT_IDS` | apple | Accepted Apple audiences: the iOS bundle ID `zm.vicinity.app` |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | seed | Bootstrap super admin created by `db:seed` |
 | `SEED_DEMO_DATA` | seed | `true` adds demo providers (development only; ignored when `NODE_ENV=production`) |
 | `RUN_SEED_ON_START` | | Container only. Default `true`: the idempotent seed runs after migrations on each start |
@@ -52,6 +54,8 @@ The API validates its configuration at startup and refuses to start on missing s
 | Variable | Description |
 |---|---|
 | `EXPO_PUBLIC_API_URL` | API base URL. Phone on the same Wi-Fi: `http://<your-LAN-IP>:4000`; Android emulator: `http://10.0.2.2:4000` |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google sign-in Web client ID (web button; phones use it as `webClientId`) |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google sign-in iOS client ID (iOS builds; `app.config.js` derives the URL scheme) |
 | `EXPO_PUBLIC_WEB_URL` | Public web address for shared links (default `https://vicinityzambia.com`) |
 | `EXPO_PUBLIC_MAP_STYLE_URL` | Optional web map style. Default OpenFreeMap (no key). Any MapLibre style URL works (MapTiler, Stadia…); `off` = radar view |
 | `GOOGLE_MAPS_ANDROID_API_KEY` | Native Android builds only (EAS/`expo run`): Google Maps SDK for Android key, read by `app.config.js`. iOS needs none |

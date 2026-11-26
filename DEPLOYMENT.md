@@ -26,7 +26,7 @@ Railway's default PostgreSQL image does **not** include PostGIS. In your Railway
    - It builds with the Dockerfile and health-checks `/api/v1/health`.
    - The container runs `apps/api/scripts/start.sh`. This runs `prisma migrate deploy`, then the idempotent seed (admin roles, categories, plans, and the bootstrap admin), then the server.
 3. Add the API variables from the checklist below. `PORT` is injected by Railway; don't set it.
-4. **Settings → Networking → Generate domain** (or add a custom domain, e.g. `api.vicinity.co.zm`). Use this URL as `API_PUBLIC_URL`, and in both Vercel projects.
+4. **Settings → Networking → Generate domain** (or add a custom domain, e.g. `api.vicinityzambia.com`). Use this URL as `API_PUBLIC_URL`, and in both Vercel projects.
 5. Deploy. In the logs, expect to see `Seed complete: … categories` and then the server's listen line.
 
 To skip the seed on later deploys, set `RUN_SEED_ON_START=false`. The seed is safe to repeat either way.
@@ -75,6 +75,23 @@ Providers buy Pro/Business plans with MTN, Airtel or Zamtel mobile money. The in
 
 Refunds and payouts are not automated. Refund in the Lenco dashboard, then adjust the provider's plan from their page in the admin portal.
 
+## Google and Apple sign-in
+
+Each provider stays hidden until its IDs are set.
+
+**Google** (Google Cloud console → APIs & Services → Credentials → Create OAuth client ID):
+1. **Web application:** add `https://vicinityzambia.com` and `http://localhost:8081` under *Authorised JavaScript origins*. Its client ID goes in `GOOGLE_CLIENT_IDS` (API) and `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (web + EAS builds).
+2. **Android:** package `zm.vicinity.app` plus the SHA-1 of your signing key (`eas credentials` shows it; add the Play App Signing SHA-1 too once you publish). No variable is needed; it just has to exist.
+3. **iOS:** bundle ID `zm.vicinity.app`. Its client ID goes in `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` for EAS builds.
+4. Configure the OAuth consent screen (app name, logo, privacy policy URL) and publish it.
+
+**Apple** (Apple Developer → Certificates, IDs & Profiles):
+1. Enable **Sign in with Apple** on the App ID `zm.vicinity.app`. EAS picks up the capability from `app.config.js` (`usesAppleSignIn`).
+2. Keep `APPLE_CLIENT_IDS=zm.vicinity.app` on the API.
+3. Apple sign-in is iPhone-only for now. Web and Android need a Services ID and a return URL, which is a later step.
+
+Native Google sign-in needs a development or store build; it does not run in Expo Go, where the button is hidden.
+
 ## 6. Wire the URLs together
 
 After the first deploys:
@@ -121,6 +138,8 @@ Use EAS: `npx eas-cli@latest init`, then `eas build --platform android|ios` and 
 | `SMS_DRIVER` | `zamtel` |
 | `ZAMTEL_SMS_API_KEY` | from Zamtel Bulk SMS |
 | `SMS_SENDER_ID` | your sender id **registered with Zamtel** (e.g. `Vicinity`) |
+| `GOOGLE_CLIENT_IDS` | Google **Web** OAuth client ID (enables Google sign-in) |
+| `APPLE_CLIENT_IDS` | `zm.vicinity.app` (enables Sign in with Apple on iPhone) |
 | `PAYMENT_PROVIDER` | `lenco` (or leave unset to launch without online payments) |
 | `LENCO_SEC_KEY` | Lenco dashboard → API keys (secret key) |
 | `LENCO_WEBHOOK_SIGNATURE_KEY` | Lenco dashboard → webhook signing key (required in production) |
@@ -132,6 +151,7 @@ Use EAS: `npx eas-cli@latest init`, then `eas build --platform android|ios` and 
 |---|---|
 | `EXPO_PUBLIC_API_URL` | `https://<api-domain>` |
 | `EXPO_PUBLIC_WEB_URL` | `https://vicinityzambia.com` |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google Web OAuth client ID (shows the Google button) |
 | `EXPO_PUBLIC_MAP_STYLE_URL` | optional: leave empty for the free OpenFreeMap street map, or a MapTiler/Stadia style URL with your key |
 
 ### Vercel: admin (`apps/admin`)

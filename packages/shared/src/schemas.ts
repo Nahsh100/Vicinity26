@@ -289,3 +289,10 @@ export const phoneVerifySchema = z.object({
   phone: zambianMobile,
   code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code'),
 });
+
+/** Google / Apple sign-in: the provider's ID token, verified by the API. Apple sends the name only on the first sign-in. */
+export const socialSignInSchema = z.object({
+  provider: z.enum(['google', 'apple']),
+  idToken: z.string().min(20).max(8000),
+  fullName: z.string().trim().max(120).optional(),
+});

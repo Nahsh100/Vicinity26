@@ -8,6 +8,7 @@ import { useWide } from '@/components/Screen';
 import { Button, Chip, EmptyState, ErrorState, Icon, ListSkeleton, Txt } from '@/components/ui';
 import { useNotifications } from '@/hooks/api';
 import { api } from '@/lib/api';
+import { notificationTarget } from '@/lib/notificationRoutes';
 import { useAuth } from '@/store/auth';
 
 const STYLE: Record<NotificationCategory, { icon: string; bg: string; fg: string }> = {
@@ -34,31 +35,10 @@ const FILTERS: { key: 'ALL' | NotificationCategory; label: string }[] = [
   { key: 'ACCOUNT', label: 'Account' },
 ];
 
-/** Primary and secondary actions per notification type. */
-function actions(n: AppNotification): { primary?: { label: string; icon?: string; href: Href; dark?: boolean }; secondary?: { label: string; href: Href } } {
-  const d = n.data;
-  switch (d.type) {
-    case 'booking':
-      return { primary: { label: 'View Details', icon: 'arrow_forward', href: `/booking/${d.bookingId}` } };
-    case 'message':
-      return { primary: { label: 'Reply', icon: 'reply', href: `/messages/${d.conversationId}`, dark: true } };
-    case 'enquiry':
-      return { primary: { label: 'Open enquiries', icon: 'arrow_forward', href: '/dashboard/enquiries' } };
-    case 'review':
-      return { primary: { label: 'See review', href: '/dashboard/reviews' } };
-    case 'review_response':
-      return d.providerId ? { primary: { label: 'View', href: `/provider/${d.providerId}` } } : {};
-    case 'listing':
-      return d.listingId ? { primary: { label: 'View', href: `/listing/${d.listingId}` } } : {};
-    case 'invitation':
-      return d.code ? { primary: { label: 'View invitation', href: `/invite/${d.code}` } } : {};
-    case 'verification':
-    case 'provider_status':
-    case 'listing_moderation':
-      return { primary: { label: 'Open dashboard', href: '/dashboard' } };
-    default:
-      return d.organizationId ? { primary: { label: 'View', href: `/organizations/${d.organizationId}` } } : {};
-  }
+/** Button for a notification: same destination as tapping its push notification (lib/notificationRoutes). */
+function actions(n: AppNotification): { primary?: { label: string; icon?: string; href: Href; dark?: boolean } } {
+  const t = notificationTarget(n.data);
+  return t ? { primary: t } : {};
 }
 
 function bucket(iso: string): string {
@@ -107,7 +87,8 @@ export default function Notifications() {
           sections={sections}
           keyExtractor={(n) => n.id}
           stickySectionHeadersEnabled={false}
-          contentContainerClassName={`w-full ${wide ? 'max-w-3xl' : 'max-w-2xl'} self-center px-margin pb-28`}
+          // NativeWind does not map contentContainerClassName on SectionList, so layout is set as a style.
+          contentContainerStyle={{ width: '100%', maxWidth: wide ? 768 : 672, alignSelf: 'center', paddingHorizontal: 16, paddingBottom: 112 }}
           refreshing={list.isRefetching}
           onRefresh={() => void list.refetch()}
           onEndReached={() => list.hasNextPage && void list.fetchNextPage()}
@@ -155,7 +136,8 @@ export default function Notifications() {
             const s = STYLE[n.category];
             const a = actions(n);
             return (
-              <Pressable onPress={() => open(n)} accessibilityRole="button" className="flex-row gap-3 rounded-3xl bg-white p-4 shadow-card active:opacity-95">
+              // Only a "button" when it has no buttons inside (nested buttons are invalid HTML on web).
+              <Pressable onPress={() => open(n)} accessibilityRole={a.primary ? undefined : 'button'} className="flex-row gap-3 rounded-3xl bg-white p-4 shadow-card active:opacity-95">
                 <View>
                   <View className={`h-11 w-11 items-center justify-center rounded-full ${s.bg}`}>
                     <Icon name={s.icon} size={22} color={s.fg} />

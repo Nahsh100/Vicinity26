@@ -29,6 +29,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#FFFFFF"
       },
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
@@ -75,7 +76,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "8df1601c-25f1-4804-bd23-f62e29733347"
+        "projectId": "e1ab4a1a-5ca9-4608-b193-d48a3a961df5"
       },
       "androidMapsConfigured": false,
       "router": {
@@ -84,6 +85,6 @@
         }
       }
     },
-    "owner": "zamtel-developer"
+    "owner": "vicinity-zms-team"
   }
 }

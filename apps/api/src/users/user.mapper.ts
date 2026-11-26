@@ -16,6 +16,7 @@ export interface UserRowForMe {
   createdAt: Date;
   provider: { id: string } | null;
   adminRoles: { role: { code: string } }[];
+  socialIdentities: { provider: string }[];
 }
 
 export const meSelect = {
@@ -33,6 +34,7 @@ export const meSelect = {
   createdAt: true,
   provider: { select: { id: true } },
   adminRoles: { select: { role: { select: { code: true } } } },
+  socialIdentities: { select: { provider: true } },
 } as const;
 
 export function toCurrentUser(u: UserRowForMe, media: MediaService): CurrentUser {
@@ -42,6 +44,7 @@ export function toCurrentUser(u: UserRowForMe, media: MediaService): CurrentUser
     emailVerified: !!u.emailVerifiedAt,
     phoneVerified: !!u.phoneVerifiedAt,
     hasPassword: !!u.passwordHash && u.passwordHash !== '!',
+    linkedProviders: u.socialIdentities.map((s) => s.provider as 'GOOGLE' | 'APPLE'),
     fullName: u.fullName,
     phone: u.phone,
     bio: u.bio,

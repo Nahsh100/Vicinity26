@@ -3,12 +3,13 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { z } from 'zod';
-import { forgotPasswordSchema, loginSchema, passwordSchema, phoneStartSchema, phoneVerifySchema, registerSchema, resetPasswordSchema } from '@vicinity/shared';
+import { forgotPasswordSchema, loginSchema, passwordSchema, phoneStartSchema, phoneVerifySchema, registerSchema, resetPasswordSchema, socialSignInSchema } from '@vicinity/shared';
 import { CurrentUser, Public, type AuthUser } from '../common/auth';
 import { ApiZodBody, ZBody } from '../common/zod';
 import { AuthService } from './auth.service';
 import { OTP_POLICY } from './otp.service';
 import { PhoneAuthService } from './phone-auth.service';
+import { clientIdsFor, SocialAuthService } from './social.service';
 
 const refreshSchema = z.object({ refreshToken: z.string().min(20) });
 const logoutSchema = z.object({ refreshToken: z.string().optional() });
@@ -27,6 +28,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly phone: PhoneAuthService,
+    private readonly socialAuth: SocialAuthService,
   ) {}
 
   @Public()
@@ -136,7 +138,14 @@ export class AuthController {
   @Public()
   @Get('methods')
   methods() {
-    return { email: true, phone: this.phone.enabled, codeLength: OTP_POLICY.length, resendSeconds: OTP_POLICY.resendCooldownSeconds };
+    return {
+      email: true,
+      phone: this.phone.enabled,
+      google: clientIdsFor('GOOGLE').length > 0,
+      apple: clientIdsFor('APPLE').length > 0,
+      codeLength: OTP_POLICY.length,
+      resendSeconds: OTP_POLICY.resendCooldownSeconds,
+    };
   }
 
   /** Sends a 6-digit code by SMS. Same response whether or not the number has an account. */
@@ -176,5 +185,15 @@ export class AuthController {
   @ApiZodBody(phoneVerifySchema)
   phoneLinkVerify(@CurrentUser() user: AuthUser, @ZBody(phoneVerifySchema) body: z.output<typeof phoneVerifySchema>) {
     return this.phone.linkVerify(user.id, body.phone, body.code);
+  }
+
+  /** Google / Apple sign-in with the provider's ID token. Links by verified email or creates the account (`isNewUser`). */
+  @Public()
+  @AuthThrottle()
+  @Post('social')
+  @HttpCode(200)
+  @ApiZodBody(socialSignInSchema)
+  social(@ZBody(socialSignInSchema) body: z.output<typeof socialSignInSchema>, @Req() req: Request) {
+    return this.socialAuth.signIn(body.provider, body.idToken, body.fullName, client(req));
   }
 }

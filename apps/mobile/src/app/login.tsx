@@ -6,6 +6,8 @@ import { View } from 'react-native';
 import { loginSchema, type LoginInput } from '@vicinity/shared';
 import { Logo } from '@/components/AppHeader';
 import { PhoneCodeFlow } from '@/components/PhoneCodeFlow';
+import { SocialSignIn } from '@/components/social/SocialSignIn';
+import { AgreeToLegal } from '@/components/LegalDocument';
 import { Screen } from '@/components/Screen';
 import { Button, FormField, InlineError, Segmented, Txt } from '@/components/ui';
 import { useAuthMethods } from '@/hooks/api';
@@ -36,6 +38,7 @@ export default function Login() {
             {showPhone ? 'Sign in or create an account with your phone number. No password needed.' : 'Sign in to save providers, contact them and manage your storefront.'}
           </Txt>
         </View>
+        <SocialSignIn />
         {phoneOn ? (
           <Segmented
             options={[
@@ -67,7 +70,7 @@ export default function Login() {
             <Link href="/register" replace><Txt variant="label-md" className="text-primary-dark">Create an account</Txt></Link>
           )}
         </View>
-        <Txt variant="body-sm" className="text-center text-on-surface-variant">By continuing you agree to the Vicinity terms and privacy policy.</Txt>
+        <AgreeToLegal />
       </View>
     </Screen>
   );

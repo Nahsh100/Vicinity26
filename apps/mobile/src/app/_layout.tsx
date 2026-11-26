@@ -12,6 +12,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useNotificationTaps } from '@/lib/notificationTaps';
 import { queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/store/auth';
 import { useLocation } from '@/store/location';
@@ -28,6 +29,7 @@ export default function RootLayout() {
   }, []);
 
   const loaded = (fontsLoaded || !!fontError) && ready;
+  useNotificationTaps(loaded);
   useEffect(() => {
     if (loaded) void SplashScreen.hideAsync();
   }, [loaded]);

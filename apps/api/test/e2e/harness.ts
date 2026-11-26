@@ -46,7 +46,7 @@ export async function resetData(prisma: PrismaService) {
       "Review", "ListingPromotion", "ListingMedia", "ServiceDetails", "ProductDetails", "Listing", "PortfolioMedia",
       "PortfolioProject", "ProviderMedia", "ProviderCredential", "ProviderAvailability", "ServiceArea", "ProviderLocation",
       "ProviderSubscription", "Entitlement", "PaymentEvent", "Payment", "Provider", "OrganizationInvitation", "GroupMembership", "Group",
-      "OrganizationMembership", "Organization", "ModerationReport", "AuditLog", "EmailToken", "RefreshToken", "OtpDelivery", "OtpChallenge"
+      "OrganizationMembership", "Organization", "ModerationReport", "AuditLog", "EmailToken", "RefreshToken", "OtpDelivery", "OtpChallenge", "SocialIdentity", "AdminBroadcast"
     CASCADE`);
   // Media is not truncated: User references it, and TRUNCATE CASCADE would wipe the admin too.
   await prisma.$executeRawUnsafe(`DELETE FROM "User" WHERE "email" IS DISTINCT FROM 'root@test.local'`);

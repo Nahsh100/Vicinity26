@@ -1,7 +1,9 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 import { colors } from '@vicinity/shared';
 import { Screen } from '@/components/Screen';
+import { LEGAL } from '@/lib/legal';
 import { Button, Card, Icon, Txt } from '@/components/ui';
 
 const FAQ = [
@@ -30,7 +32,11 @@ export default function Help() {
         <Card className="gap-2">
           <Txt variant="headline-sm">Still need help?</Txt>
           <Txt variant="body-md" className="text-on-surface-variant">Email our support team and we'll get back to you.</Txt>
-          <Button title="Email support" icon="mail_outline" kind="secondary" onPress={() => void Linking.openURL('mailto:support@vicinity.co.zm')} />
+          <Button title="Email support" icon="mail_outline" kind="secondary" onPress={() => void Linking.openURL(`mailto:${LEGAL.supportEmail}`)} />
+          <View className="flex-row flex-wrap gap-2 pt-1">
+            <Button title="Privacy policy" kind="ghost" size="sm" onPress={() => router.push('/privacy')} />
+            <Button title="Terms of use" kind="ghost" size="sm" onPress={() => router.push('/terms')} />
+          </View>
         </Card>
       </View>
     </Screen>

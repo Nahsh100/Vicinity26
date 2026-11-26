@@ -64,7 +64,8 @@ export function WebFooter() {
         <View className="min-w-[180px] flex-1 gap-1">
           <Txt variant="headline-sm" className="mb-2">Support & Community</Txt>
           <FooterLink label="Help Center" onPress={() => go('/help')} />
-          <FooterLink label="Privacy" onPress={() => go('/settings/privacy')} />
+          <FooterLink label="Privacy policy" onPress={() => go('/privacy')} />
+          <FooterLink label="Terms of use" onPress={() => go('/terms')} />
           <FooterLink label="Become a Provider" onPress={() => go('/become-provider')} />
           <FooterLink label="Organizations & Groups" onPress={() => go('/organizations')} />
         </View>

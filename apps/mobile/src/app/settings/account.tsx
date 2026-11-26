@@ -128,6 +128,15 @@ function SignInMethods() {
           </Txt>
         </View>
       </View>
+      {user.linkedProviders.length ? (
+        <View className="flex-row items-center gap-3">
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary-fixed/50"><Icon name="link" size={20} color={colors.primaryDark} /></View>
+          <View className="flex-1">
+            <Txt variant="label-lg">Linked accounts</Txt>
+            <Txt variant="body-sm" className="text-on-surface-variant">{user.linkedProviders.map((p) => (p === 'GOOGLE' ? 'Google' : 'Apple')).join(' and ')} · sign in with one tap</Txt>
+          </View>
+        </View>
+      ) : null}
       {!user.email || !user.emailVerified ? (
         <View className="gap-2">
           <TextField label={user.email ? 'Use a different email' : 'Add an email'} keyboardType="email-address" autoCapitalize="none" autoComplete="email" value={email} onChangeText={setEmail} placeholder="you@example.com" />

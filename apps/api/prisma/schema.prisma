@@ -299,6 +299,8 @@ model User {
   refreshTokens           RefreshToken[]
   emailTokens             EmailToken[]
   otpChallenges           OtpChallenge[]
+  socialIdentities        SocialIdentity[]
+  broadcastsSent          AdminBroadcast[]         @relation("BroadcastAuthor")
   deviceTokens            DeviceToken[]
   provider                Provider?
   adminRoles              UserAdminRole[]
@@ -1361,4 +1363,65 @@ model OtpDelivery {
   challenge OtpChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
   @@index([challengeId])
+}
+
+/// A Google or Apple account linked to a user. Matched by (provider, subject): the provider's
+/// stable user id, never the email (emails change and can be reassigned).
+model SocialIdentity {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid
+  /// GOOGLE or APPLE
+  provider  String
+  subject   String
+  /// Email the provider reported at link time (Apple may give a private relay address).
+  email     String?
+  createdAt DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, subject])
+  @@index([userId])
+}
+
+enum BroadcastAudience {
+  ALL
+  CUSTOMERS
+  PROVIDERS
+  USERS
+}
+
+enum BroadcastStatus {
+  SENDING
+  SENT
+  FAILED
+}
+
+/// A notification an admin sent to everyone, a segment, or chosen users. Each recipient gets a
+/// normal Notification (dedupe key broadcast:<id>), so preferences, quiet hours and push apply.
+model AdminBroadcast {
+  id             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdById    String               @db.Uuid
+  title          String
+  body           String
+  /// SYSTEM (announcement: reaches everyone) or PROMOTION (only users who opted in).
+  category       NotificationCategory
+  audience       BroadcastAudience
+  /// Recipients when audience = USERS.
+  userIds        String[]             @db.Uuid
+  /// Optional in-app path opened when the notification is tapped.
+  link           String?
+  linkLabel      String?
+  status         BroadcastStatus      @default(SENDING)
+  /// Users targeted, and notifications actually created (opt-outs are skipped).
+  recipientCount Int                  @default(0)
+  deliveredCount Int                  @default(0)
+  error          String?
+  createdAt      DateTime             @default(now())
+  completedAt    DateTime?
+
+  createdBy User @relation("BroadcastAuthor", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([createdAt])
+  @@index([status])
 }

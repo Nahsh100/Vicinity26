@@ -23,6 +23,7 @@ const NAV: { href: string; label: string; perm: string; icon: string }[] = [
   { href: '/listings', label: 'Listings', perm: 'listings.view', icon: '🏷' },
   { href: '/categories', label: 'Categories', perm: 'categories.manage', icon: '☰' },
   { href: '/organizations', label: 'Organizations', perm: 'organizations.view', icon: '👥' },
+  { href: '/notifications', label: 'Notifications', perm: 'notifications.send', icon: '🔔' },
   { href: '/monetization', label: 'Plans & promotions', perm: 'monetization.manage', icon: '★' },
   { href: '/audit', label: 'Audit log', perm: 'audit.view', icon: '⎙' },
 ];

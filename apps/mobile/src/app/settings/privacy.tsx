@@ -24,6 +24,7 @@ export default function Privacy() {
             <Txt variant="body-md" className="text-ink-muted">{b}</Txt>
           </Card>
         ))}
+        <Button title="Read the full privacy policy" kind="ghost" icon="description" onPress={() => router.push('/privacy')} />
         {signedIn ? (
           <>
             <Button title="Notification preferences" kind="secondary" onPress={() => router.push('/settings/notifications')} />

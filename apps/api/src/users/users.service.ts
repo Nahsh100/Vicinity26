@@ -102,6 +102,7 @@ export class UsersService {
       await tx.provider.updateMany({ where: { userId }, data: { status: 'SUSPENDED', deletedAt: now, phone: '', whatsapp: null, email: null } });
       await tx.listing.updateMany({ where: { provider: { userId } }, data: { status: 'ARCHIVED', deletedAt: now } });
       await tx.refreshToken.deleteMany({ where: { userId } });
+      await tx.socialIdentity.deleteMany({ where: { userId } });
       await tx.deviceToken.deleteMany({ where: { userId } });
       await tx.organizationMembership.deleteMany({ where: { userId } });
       await tx.groupMembership.deleteMany({ where: { userId } });

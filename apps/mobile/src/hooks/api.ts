@@ -450,5 +450,5 @@ export function usePayment(id: string | null) {
 
 /** Sign-in methods offered by the API (phone sign-in only when PHONE_OTP_AUTH is on). */
 export function useAuthMethods() {
-  return useQuery({ queryKey: ['auth-methods'], queryFn: () => api.get<{ email: boolean; phone: boolean }>('/auth/methods'), staleTime: 5 * 60_000 });
+  return useQuery({ queryKey: ['auth-methods'], queryFn: () => api.get<{ email: boolean; phone: boolean; google: boolean; apple: boolean }>('/auth/methods'), staleTime: 5 * 60_000 });
 }

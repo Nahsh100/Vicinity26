@@ -14,3 +14,5 @@ process.env.SIMULATOR_WEBHOOK_SECRET = 'test-simulator-webhook-secret';
 process.env.PHONE_OTP_AUTH = 'true';
 process.env.OTP_PEPPER = 'test-otp-pepper-0123456789abcdef0123456789';
 process.env.SMS_DRIVER = 'dev';
+process.env.GOOGLE_CLIENT_IDS = 'test-web-client.apps.googleusercontent.com';
+process.env.APPLE_CLIENT_IDS = 'zm.vicinity.app';

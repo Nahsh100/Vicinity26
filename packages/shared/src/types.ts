@@ -50,6 +50,8 @@ export interface CurrentUser {
   phoneVerified: boolean;
   /** False for phone sign-in accounts that never set a password. */
   hasPassword: boolean;
+  /** Google / Apple accounts linked for sign-in. */
+  linkedProviders: ('GOOGLE' | 'APPLE')[];
   fullName: string;
   phone: string | null;
   bio: string | null;

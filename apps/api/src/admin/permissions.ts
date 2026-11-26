@@ -16,6 +16,7 @@ export const P = {
   MONETIZATION: 'monetization.manage',
   AUDIT_VIEW: 'audit.view',
   ADMINS_MANAGE: 'admins.manage',
+  NOTIFICATIONS_SEND: 'notifications.send',
 } as const;
 
 export const ALL_PERMISSIONS = Object.values(P);
@@ -43,6 +44,11 @@ export const ROLE_DEFINITIONS: Record<string, { name: string; description: strin
     name: 'Support',
     description: 'Read access to help users; can suspend and reactivate accounts',
     permissions: [P.DASHBOARD, P.USERS_VIEW, P.USERS_MANAGE, P.PROVIDERS_VIEW, P.LISTINGS_VIEW, P.ORGS_VIEW, P.REPORTS_VIEW],
+  },
+  COMMUNICATIONS: {
+    name: 'Communications',
+    description: 'Sends announcements and promotions to users',
+    permissions: [P.DASHBOARD, P.USERS_VIEW, P.PROVIDERS_VIEW, P.NOTIFICATIONS_SEND],
   },
   CATALOG_MANAGER: {
     name: 'Catalog manager',

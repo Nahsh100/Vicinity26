@@ -1,7 +1,11 @@
+import { Platform } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { LOCKUP_DARK, LOCKUP_LIGHT, SYMBOL_DARK, SYMBOL_LIGHT, SYMBOL_SMALL_DARK, SYMBOL_SMALL_LIGHT } from './marks.generated';
 
 export type BrandTone = 'light' | 'dark';
+
+/** Hides decorative artwork from screen readers: aria-hidden on web, native props on phones. */
+export const decorative = (Platform.OS === 'web' ? { 'aria-hidden': true } : { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' }) as Record<string, unknown>;
 
 /** Wordmark colours from the designer's lockups. */
 export const BRAND_INK = { light: '#06332E', dark: '#F2FFFC' } as const;
@@ -14,7 +18,7 @@ export const BRAND_ACCENT = { light: '#0EA88E', dark: '#1FDDBB' } as const;
 export function BrandMark({ size = 36, tone = 'light' }: { size?: number; tone?: BrandTone }) {
   const small = size < 64;
   const xml = tone === 'dark' ? (small ? SYMBOL_SMALL_DARK : SYMBOL_DARK) : small ? SYMBOL_SMALL_LIGHT : SYMBOL_LIGHT;
-  return <SvgXml xml={xml} width={size} height={size} accessibilityElementsHidden importantForAccessibility="no" />;
+  return <SvgXml xml={xml} width={size} height={size} {...decorative} />;
 }
 
 /** Stacked lockup: symbol, VICINITY and the "Verified local network" tagline. For hero placements (≥ 160 px wide). */

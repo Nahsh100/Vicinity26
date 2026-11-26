@@ -1,5 +1,6 @@
 import { Controller, Delete, Get, HttpCode, Module, Param, ParseUUIDPipe, Patch, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { z } from 'zod';
 import { CategoriesService, categoryInputSchema } from '../categories/categories.service';
 import { CurrentUser, RequirePermissions, type AuthUser } from '../common/auth';
@@ -21,6 +22,7 @@ import {
   usersQuery,
   verificationSchema,
 } from './admin.service';
+import { broadcastAudience, broadcastSchema, BroadcastService, type BroadcastInput } from './broadcast.service';
 import { P } from './permissions';
 
 const optionalReason = z.object({ reason: z.string().trim().max(500).optional() });
@@ -278,5 +280,43 @@ export class AdminController {
   }
 }
 
-@Module({ imports: [ReviewsModule], controllers: [AdminController], providers: [AdminService] })
+
+const audienceQuery = z.object({ audience: broadcastAudience.default('ALL'), userIds: z.string().optional() });
+
+/** Admin → users notifications (announcements and promotions). */
+@ApiTags('admin')
+@ApiBearerAuth()
+@Controller('admin/notifications')
+export class AdminNotificationsController {
+  constructor(private readonly broadcasts: BroadcastService) {}
+
+  /** How many active users an audience reaches (shown before sending). */
+  @RequirePermissions(P.NOTIFICATIONS_SEND)
+  @Get('audience')
+  audience(@ZQuery(audienceQuery) q: z.output<typeof audienceQuery>) {
+    return this.broadcasts.audienceCount(q.audience, q.userIds ? q.userIds.split(',').filter(Boolean) : []);
+  }
+
+  @RequirePermissions(P.NOTIFICATIONS_SEND)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('broadcasts')
+  @ApiZodBody(broadcastSchema)
+  send(@CurrentUser() admin: AuthUser, @ZBody(broadcastSchema) body: BroadcastInput) {
+    return this.broadcasts.create(admin, body);
+  }
+
+  @RequirePermissions(P.NOTIFICATIONS_SEND)
+  @Get('broadcasts')
+  list() {
+    return this.broadcasts.list();
+  }
+
+  @RequirePermissions(P.NOTIFICATIONS_SEND)
+  @Get('broadcasts/:id')
+  get(@ID() id: string) {
+    return this.broadcasts.get(id);
+  }
+}
+
+@Module({ imports: [ReviewsModule], controllers: [AdminController, AdminNotificationsController], providers: [AdminService, BroadcastService] })
 export class AdminModule {}

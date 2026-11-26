@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { OtpService } from './otp.service';
 import { PhoneAuthService } from './phone-auth.service';
+import { SocialAuthService, SocialTokenVerifier } from './social.service';
 import { createSmsTransport, SMS_TRANSPORT } from './sms';
 
 @Global()
@@ -17,7 +18,7 @@ import { createSmsTransport, SMS_TRANSPORT } from './sms';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthGuard, OtpService, PhoneAuthService, { provide: SMS_TRANSPORT, useFactory: createSmsTransport }],
+  providers: [AuthService, AuthGuard, OtpService, PhoneAuthService, SocialAuthService, SocialTokenVerifier, { provide: SMS_TRANSPORT, useFactory: createSmsTransport }],
   exports: [AuthService, AuthGuard, OtpService, SMS_TRANSPORT],
 })
 export class AuthModule {}

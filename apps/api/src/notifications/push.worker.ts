@@ -15,6 +15,7 @@ interface ClaimedRow {
   title: string;
   body: string;
   data: Record<string, string>;
+  notificationId: string;
   category: string;
 }
 
@@ -58,7 +59,7 @@ export class PushWorker {
          SET "attempts" = d."attempts" + 1, "nextAttemptAt" = now() + interval '2 minutes', "updatedAt" = now()
         FROM claimed, "DeviceToken" t, "Notification" n
        WHERE d."id" = claimed."id" AND t."id" = d."deviceTokenId" AND n."id" = d."notificationId"
-      RETURNING d."id", d."attempts", t."token", t."id" AS "deviceTokenId", n."title", n."body", n."data", n."category"::text`;
+      RETURNING d."id", d."attempts", t."token", t."id" AS "deviceTokenId", n."id" AS "notificationId", n."title", n."body", n."data", n."category"::text`;
     if (!rows.length) return 0;
 
     const valid = rows.filter((r) => Expo.isExpoPushToken(r.token));
@@ -66,7 +67,8 @@ export class PushWorker {
     for (const r of invalid) await this.fail(r, 'invalid push token', true);
 
     for (const chunk of this.expo.chunkPushNotifications(
-      valid.map((r) => ({ to: r.token, title: r.title, body: r.body, data: { ...r.data, category: r.category }, sound: 'default' as const })),
+      // notificationId lets the app mark it read when tapped; channelId matches the channel the app creates.
+      valid.map((r) => ({ to: r.token, title: r.title, body: r.body, data: { ...r.data, category: r.category, notificationId: r.notificationId }, sound: 'default' as const, channelId: 'default' })),
     )) {
       const batchRows = valid.splice(0, chunk.length);
       let tickets: ExpoPushTicket[];

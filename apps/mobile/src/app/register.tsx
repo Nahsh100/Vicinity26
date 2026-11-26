@@ -6,6 +6,8 @@ import { View } from 'react-native';
 import type { z } from 'zod';
 import { registerSchema } from '@vicinity/shared';
 import { Logo } from '@/components/AppHeader';
+import { SocialSignIn } from '@/components/social/SocialSignIn';
+import { AgreeToLegal } from '@/components/LegalDocument';
 import { Screen } from '@/components/Screen';
 import { Button, FormField, InlineError, Txt } from '@/components/ui';
 import { toApiError } from '@/lib/api';
@@ -43,13 +45,14 @@ export default function Register() {
           <Txt variant="headline-lg">Create your account</Txt>
           <Txt variant="body-lg" className="text-ink-muted">Find local services — and list your own whenever you're ready.</Txt>
         </View>
+        <SocialSignIn />
         <InlineError message={error} />
         <FormField control={control} name="fullName" label="Full name" icon="person_outline" autoComplete="name" textContentType="name" />
         <FormField control={control} name="email" label="Email" icon="mail_outline" keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
         <FormField control={control} name="phone" label="Phone (optional)" icon="call" keyboardType="phone-pad" placeholder="097 123 4567" hint="Zambian or international number" />
         <FormField control={control} name="password" label="Password" icon="lock_outline" secure hint="At least 8 characters with a letter and a number" onSubmitEditing={() => void submit()} />
         <Button title="Create account" loading={formState.isSubmitting} onPress={() => void submit()} />
-        <Txt variant="body-sm" className="text-center text-on-surface-variant">By continuing you agree to Vicinity's terms and privacy policy.</Txt>
+        <AgreeToLegal />
         <View className="flex-row justify-center gap-1">
           <Txt variant="body-md" className="text-on-surface-variant">Already have an account?</Txt>
           <Link href="/login" replace><Txt variant="label-md" className="text-primary-dark">Sign in</Txt></Link>
