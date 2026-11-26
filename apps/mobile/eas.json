@@ -9,7 +9,14 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.vicinityzambia.com",
+        "EXPO_PUBLIC_WEB_URL": "https://www.vicinityzambia.com"
+      }
     },
     "production": {
       "autoIncrement": true

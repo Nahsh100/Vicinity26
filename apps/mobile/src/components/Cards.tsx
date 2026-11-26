@@ -4,6 +4,7 @@ import { colors, formatDistance, formatPrice, type ListingSummary, type Provider
 import { useToggleSaveListing, useToggleSaveProvider } from '@/hooks/api';
 import { useAuth } from '@/store/auth';
 import { callProvider, whatsappProvider } from './ContactActions';
+import { providerHref } from './map/shared';
 import { Badge, Button, Icon, IconButton, Thumb, TopRatedBadge, Txt, VerifiedBadge } from './ui';
 
 function requireSignIn(): boolean {
@@ -123,7 +124,7 @@ export function ListingCard({ l, highlight, onBook }: { l: ListingSummary; highl
   return (
     <Pressable
       accessibilityLabel={`${l.title} by ${l.provider.displayName}`}
-      onPress={() => router.push(`/listing/${l.id}`)}
+      onPress={() => router.push(providerHref(l))}
       className={`gap-2 rounded-card bg-white p-3 shadow-card active:opacity-95 ${highlight ? 'border-2 border-primary/60' : ''}`}
     >
       <View className="flex-row items-start gap-3">
@@ -183,7 +184,7 @@ export function ListingCard({ l, highlight, onBook }: { l: ListingSummary; highl
 /** Compact row (Stitch "Popular Right Now"). */
 export function ListingRow({ l }: { l: ListingSummary }) {
   return (
-    <Pressable onPress={() => router.push(`/listing/${l.id}`)} className="flex-row items-center justify-between rounded-2xl bg-white p-3 shadow-card active:opacity-95">
+    <Pressable onPress={() => router.push(providerHref(l))} className="flex-row items-center justify-between rounded-2xl bg-white p-3 shadow-card active:opacity-95">
       <View className="min-w-0 flex-1 flex-row items-center gap-3">
         <Thumb uri={l.coverUrl ?? l.provider.logoUrl} name={l.provider.displayName} icon={l.category.icon} size={64} />
         <View className="min-w-0 flex-1">

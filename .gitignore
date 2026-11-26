@@ -20,3 +20,6 @@ apps/api/storage-test/
 # Service-account and private keys (never commit)
 *firebase-adminsdk*.json
 *serviceAccount*.json
+
+# Vercel CLI project link
+.vercel

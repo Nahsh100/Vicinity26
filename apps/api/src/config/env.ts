@@ -48,8 +48,8 @@ const schema = z
     SMS_DRIVER: z.enum(['zamtel', 'dev', 'none']).default('dev'),
     ZAMTEL_SMS_API_KEY: z.string().optional().default(''),
     ZAMTEL_SMS_BASE_URL: z.string().url().default('https://bulksms.zamtel.co.zm/api/v2.1/action/send'),
-    /** Alphanumeric sender id registered with Zamtel (max 11 characters). */
-    SMS_SENDER_ID: z.string().min(1).max(11).default('Vicinity'),
+    /** Sender id registered with Zamtel (e.g. Ztl_Veretras; Zamtel allows more than the GSM 11). */
+    SMS_SENDER_ID: z.string().min(1).max(20).default('Vicinity'),
     /** Android SMS Retriever app hash (11 chars), appended so the app can read its own code. Optional. */
     SMS_APP_HASH: z.string().length(11).optional().or(z.literal('')).default(''),
     // ── Google / Apple sign-in. Each is off until its client IDs are set. ──

@@ -4,6 +4,7 @@ import { type LayoutChangeEvent, Pressable, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { colors, formatDistance, type ListingSummary } from '@vicinity/shared';
 import { Button, Icon, Thumb, Txt } from './ui';
+import { pinLabel, priceLabel, providerHref } from './map/shared';
 
 const KM_PER_DEG = 111.32;
 
@@ -98,13 +99,13 @@ export function RadarMap({
                 key={item.id}
                 accessibilityLabel={`${item.title}, ${item.provider.displayName}`}
                 onPress={() => setSelected(item.id === selected ? null : item.id)}
-                style={{ position: 'absolute', left: x - 36, top: y - 34, width: 72 }}
+                style={{ position: 'absolute', left: x - 75, top: y - 34, width: 150 }}
                 className="items-center"
               >
                 <View className={`flex-row items-center gap-1 rounded-full px-2.5 py-1 shadow-raised ${selected === item.id || (!selected && idx === 0) ? 'bg-primary-dark' : 'bg-white'}`}>
                   {selected === item.id || (!selected && idx === 0) ? <Icon name={item.category.icon ?? 'place'} size={12} color="#FFFFFF" /> : null}
                   <Txt variant="label-sm" className={selected === item.id || (!selected && idx === 0) ? 'text-white' : 'text-on-surface'} numberOfLines={1}>
-                    {item.price != null ? `ZMW ${Math.round(item.price)}` : 'Quote'}
+                    {pinLabel(item)}
                   </Txt>
                 </View>
                 <View className="h-2 w-0.5 bg-navy/60" />
@@ -114,7 +115,7 @@ export function RadarMap({
               <Pressable
                 key={item.id}
                 accessibilityLabel={`${item.title}, ${item.provider.displayName}`}
-                onPress={() => router.push(`/listing/${item.id}`)}
+                onPress={() => router.push(providerHref(item))}
                 style={{ position: 'absolute', left: x - 14, top: y - 30 }}
                 className="items-center"
               >
@@ -141,8 +142,8 @@ export function RadarMap({
                 </View>
               </View>
               <View className="flex-row items-center justify-between">
-                <Txt variant="label-md" className="text-primary-dark" numberOfLines={1}>{sel.item.title}</Txt>
-                <Button title="View" size="sm" onPress={() => router.push(`/listing/${sel.item.id}`)} />
+                <Txt variant="label-md" className="text-primary-dark" numberOfLines={1}>{sel.item.title} · {priceLabel(sel.item)}</Txt>
+                <Button title="View profile" size="sm" onPress={() => router.push(providerHref(sel.item))} />
               </View>
             </View>
           ) : null}

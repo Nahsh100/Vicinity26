@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import type { ListingSummary } from '@vicinity/shared';
 import { ICON_ALIASES, ICONS } from '../ui/icons.generated';
-import { circleRing, MapChrome, pinnable, priceLabel, radiusBounds, SelectedCard, type NearbyMapProps } from './shared';
+import { circleRing, MapChrome, pinLabel, pinnable, providerHref, radiusBounds, SelectedCard, type NearbyMapProps } from './shared';
 
 type MapLibre = typeof import('maplibre-gl');
 type MlMap = import('maplibre-gl').Map;
@@ -35,6 +35,9 @@ function iconSvg(name: string | null | undefined, color: string, size: number) {
   return `<svg width="${size}" height="${size}" viewBox="0 -960 960 960" aria-hidden="true"><path d="${d}" fill="${color}"/></svg>`;
 }
 
+/** Listing titles are user-written: never put them into innerHTML unescaped. */
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
 function pinElement(item: ListingSummary, explorer: boolean, active: boolean, onClick: () => void): HTMLElement {
   const el = document.createElement('button');
   el.type = 'button';
@@ -46,7 +49,7 @@ function pinElement(item: ListingSummary, explorer: boolean, active: boolean, on
     el.innerHTML = `
       <span style="display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;background:${bg};color:${fg};
         font:700 12px 'PlusJakartaSans_700Bold',system-ui,sans-serif;box-shadow:0 6px 18px rgba(11,28,48,.18);white-space:nowrap;">
-        ${active ? iconSvg(item.category.icon, '#FFFFFF', 13) : ''}${priceLabel(item)}
+        ${active ? iconSvg(item.category.icon, '#FFFFFF', 13) : ''}${escapeHtml(pinLabel(item))}
       </span>
       <span style="width:2px;height:7px;background:${NAVY};opacity:.6"></span>
       <span style="width:9px;height:9px;border-radius:50%;background:${NAVY};border:2px solid #fff"></span>`;
@@ -147,7 +150,7 @@ export function LiveMap({ origin, radiusKm, items, height = 192, onRecenter, exp
     if (origin) next.push(new ml.Marker({ element: meElement() }).setLngLat([origin.lng, origin.lat]).addTo(m));
     pinnable(items).forEach((item, idx) => {
       const active = selected ? selected === item.id : explorer && idx === 0;
-      const el = pinElement(item, explorer, active, () => (explorer ? setSelected((s) => (s === item.id ? null : item.id)) : router.push(`/listing/${item.id}`)));
+      const el = pinElement(item, explorer, active, () => (explorer ? setSelected((s) => (s === item.id ? null : item.id)) : router.push(providerHref(item))));
       next.push(new ml.Marker({ element: el, anchor: 'bottom' }).setLngLat([item.position!.lng, item.position!.lat]).addTo(m));
     });
     markers.current = next;

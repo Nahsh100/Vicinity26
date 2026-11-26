@@ -106,7 +106,8 @@ function share(p: ProviderDetail) {
 function MobileProvider({ data, p, onReport, openBooking }: { data: Data; p: ProviderDetail; onReport: () => void; openBooking: boolean }) {
   const save = useToggleSaveProvider();
   const signedIn = useAuth((s) => s.status === 'signedIn');
-  const [tab, setTab] = useState<Tab>('services');
+  const initialTab = useLocalSearchParams<{ tab?: string }>().tab;
+  const [tab, setTab] = useState<Tab>(initialTab === 'products' ? 'products' : 'services');
   const [booking, setBooking] = useState<{ open: boolean; listingId?: string | null }>({ open: openBooking });
   const [enquiry, setEnquiry] = useState(false);
   const [project, setProject] = useState<PortfolioProject | null>(null);
@@ -273,7 +274,8 @@ function MobileProvider({ data, p, onReport, openBooking }: { data: Data; p: Pro
 function WebProvider({ data, p, onReport }: { data: Data; p: ProviderDetail; onReport: () => void }) {
   const save = useToggleSaveProvider();
   const signedIn = useAuth((s) => s.status === 'signedIn');
-  const [tab, setTab] = useState<Tab>('services');
+  const initialTab = useLocalSearchParams<{ tab?: string }>().tab;
+  const [tab, setTab] = useState<Tab>(initialTab === 'products' ? 'products' : 'services');
   const [selected, setSelected] = useState<string | null>(null);
   const [project, setProject] = useState<PortfolioProject | null>(null);
   const tabs = useTabs(p, data);

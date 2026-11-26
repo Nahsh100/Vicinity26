@@ -58,7 +58,8 @@ export function Screen({
   );
   return (
     <SafeAreaView edges={edges} className="flex-1 bg-surface">
-      {nav && wide && isWeb && !header ? <AppHeader /> : null}
+      {/* Web: the site header (with its menu) on every page, at any width. */}
+      {nav && isWeb && !header ? <AppHeader /> : null}
       {top}
       {body}
     </SafeAreaView>

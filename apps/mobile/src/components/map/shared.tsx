@@ -36,6 +36,27 @@ export function circleRing(lat: number, lng: number, km: number, steps = 72): [n
 }
 
 export const priceLabel = (l: ListingSummary) => (l.price != null ? `ZMW ${Math.round(l.price)}` : 'Quote');
+
+const PIN_MAX = 20;
+/**
+ * Short service/product name for a map pin: the title without bracketed detail, cut at a word
+ * boundary ("Knotless box braids (medium)" → "Knotless box braids", "Mobile money deposits &
+ * withdrawals" → "Mobile money…"). Prices stay on the card, where there is room to read them.
+ */
+export function pinLabel(l: ListingSummary) {
+  const t = l.title.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || l.category.name;
+  if (t.length <= PIN_MAX) return t;
+  let out = '';
+  for (const w of t.split(' ')) {
+    if (/^(&|and|with|for|of|-|–)$/i.test(w) && out) break;
+    if ((out ? `${out} ${w}` : w).length > PIN_MAX) break;
+    out = out ? `${out} ${w}` : w;
+  }
+  return `${out || t.slice(0, PIN_MAX - 1)}…`;
+}
+
+/** A listing opens its provider's profile (on the Products tab for products). */
+export const providerHref = (l: ListingSummary) => `/provider/${l.provider.slug}${l.type === 'PRODUCT' ? '?tab=products' : ''}` as const;
 export const pinnable = (items: ListingSummary[]) => items.filter((i) => i.position);
 
 /** Card for the selected pin (explorer and native maps). */
@@ -60,7 +81,7 @@ export function SelectedCard({ item, onClose }: { item: ListingSummary; onClose:
         </View>
         <View className="flex-row items-center justify-between gap-2">
           <Txt variant="label-md" className="flex-1 text-primary-dark" numberOfLines={1}>{item.title} · {priceLabel(item)}</Txt>
-          <Button title="View" size="sm" onPress={() => router.push(`/listing/${item.id}`)} />
+          <Button title="View profile" size="sm" onPress={() => router.push(providerHref(item))} />
         </View>
       </View>
     </View>

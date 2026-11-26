@@ -4,7 +4,7 @@ import { Platform, View } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { colors } from '@vicinity/shared';
 import { Icon, Txt } from '../ui';
-import { MapChrome, pinnable, priceLabel, radiusBounds, SelectedCard, type NearbyMapProps } from './shared';
+import { MapChrome, pinLabel, pinnable, radiusBounds, SelectedCard, type NearbyMapProps } from './shared';
 
 /**
  * Native street map: Apple Maps on iOS (no key), Google Maps on Android. Android store builds need
@@ -69,7 +69,7 @@ export function LiveMap({ origin, radiusKm, items, height = 192, onRecenter, exp
             >
               {explorer ? (
                 <View className={`rounded-full px-2.5 py-1 ${active ? 'bg-primary-dark' : 'bg-white'}`}>
-                  <Txt variant="label-sm" className={active ? 'text-white' : 'text-on-surface'}>{priceLabel(item)}</Txt>
+                  <Txt variant="label-sm" className={active ? 'text-white' : 'text-on-surface'}>{pinLabel(item)}</Txt>
                 </View>
               ) : (
                 <View className={`h-8 w-8 items-center justify-center rounded-full border-2 border-white ${active ? 'bg-navy' : 'bg-primary-dark'}`}>
