@@ -27,7 +27,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#00A896"
       },
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -43,19 +46,37 @@
       "expo-web-browser",
       [
         "expo-location",
-        { "locationWhenInUsePermission": "Vicinity uses your location to show services and products near you." }
+        {
+          "locationWhenInUsePermission": "Vicinity uses your location to show services and products near you."
+        }
       ],
       [
         "expo-image-picker",
-        { "photosPermission": "Choose photos for your profile, listings and portfolio." }
+        {
+          "photosPermission": "Choose photos for your profile, listings and portfolio."
+        }
       ],
-      ["expo-notifications", { "color": "#00A896" }]
+      [
+        "expo-notifications",
+        {
+          "color": "#00A896"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false
     },
     "extra": {
-      "eas": { "projectId": "" }
-    }
+      "eas": {
+        "projectId": "8df1601c-25f1-4804-bd23-f62e29733347"
+      },
+      "androidMapsConfigured": false,
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      }
+    },
+    "owner": "zamtel-developer"
   }
 }
