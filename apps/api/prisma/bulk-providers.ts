@@ -17,6 +17,8 @@ import * as argon2 from 'argon2';
 import { PrismaClient } from '../src/generated/prisma/client';
 import { slugify } from '../src/common/util';
 import { PLACES } from '../src/locations/places';
+import { env } from '../src/config/env';
+import { LocalStorageDriver, R2StorageDriver } from '../src/media/storage';
 
 const DOMAIN = '@bulk.vicinity.local';
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
@@ -221,6 +223,12 @@ function rng(seed: number) {
 }
 
 async function remove() {
+  // Photos added by bulk-images.ts: delete the stored files (rows go with their owner below).
+  const e = env();
+  const driver = e.STORAGE_DRIVER === 'r2' ? new R2StorageDriver(e) : new LocalStorageDriver(e);
+  const photos = await prisma.media.findMany({ where: { storageKey: { startsWith: 'bulk-test/' } }, select: { storageKey: true } });
+  for (const m of photos) await driver.remove(m.storageKey).catch(() => undefined);
+  if (photos.length) console.log(`Removed ${photos.length} bulk photo files.`);
   const users = await prisma.user.findMany({ where: { email: { endsWith: DOMAIN } }, select: { id: true } });
   const ids = users.map((u) => u.id);
   let done = 0;
